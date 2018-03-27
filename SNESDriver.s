@@ -96,7 +96,9 @@ Leftc:
 	bl	printButton			@ print "you have pressed"
 	ldr	r0, =Left
 	bl	printf
-	mov	r0, #-2
+	tst	r9, #(1<<7)
+	moveq	r0, #-10
+	movne	r0, #-5
 	bl	drawPadle
 	b	done
 Rightc:
@@ -105,7 +107,9 @@ Rightc:
 	bl	printButton			@ print "you have pressed"
 	ldr	r0, =Right
 	bl	printf
-	mov	r0, #2
+	tst	r9, #(1<<7)
+	moveq	r0, #10
+	movne	r0, #5
 	bl	drawPadle
 	b	done
 Ac:
@@ -154,9 +158,14 @@ done:
 	bl	readSNES			@ read buttons
 	ldr	r0, =buttons
 	ldr	r0, [r0]			@ load buttons pressed
+	tst	r0, #(1<<9)
+	beq	buttonWasPressed
+	tst	r0, #(1<<8)
+	beq	buttonWasPressed
 	mov	r11, #0xffff
 	teq	r0, r11				@ test if no buttons were pressed
 	bne	done				@ /if the pressed button was released
+	
 
 	b	buttonWasPressed		@ loop again
 
@@ -339,3 +348,4 @@ X:		.asciz	"X\r\n"
 L:		.asciz	"Left\r\n"
 
 R:		.asciz	"Right\r\n"
+
