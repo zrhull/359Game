@@ -56,6 +56,59 @@ bot2:
 	@ stop
 	haltLoop$:
 		b	haltLoop$
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@ Draw Image
+@ r0 - address
+@ r1 - address of wh
+@ r2 - address of xy
+.global drawImage
+drawImage:
+	push	{r4-r10, lr}
+	
+	mov	r4, r0			@@ address of image
+	mov	r5, r1			@@ address of width and height, h offset by 4
+	mov 	r6, r2			@@ address of x and y coord, y offset by 4
+	
+	mov	r7, #0			@@ pixel's drawn
+	mov 	r8, #0			@@ column
+	mov	r9, #0			@@ row
+	
+	ldr	r0, [r5]		@@ load width
+	ldr	r1, [r5, #4]		@@ load height
+	mul	r10, r1, r0		@@ total number of pixels to be drawn
+	b	checkSize		@@ Branch to check if all pixels are drawn
+
+drawLoop:
+	ldr	r0, [r6]		@@ x
+	ldr	r1, [r6, #4]		@@ y
+	
+	add	r0, r8			@@ column
+	add	r1, r9			@@ row
+	ldr	r2, [r4, r7, lsl #2]	@@ load from image address, pixel number,
+					@@ shifted by 2
+	bl	DrawPixel		@@ draw specified pixel
+	
+	add	r7, #1			@@ increment pixels drawn
+	add	r8, #1			@@ increment coloum
+	ldr	r0, [r5]		@@ load width of image
+	cmp	r8, r0			@@ if width is less than col, move on
+	blt	drawLoop
+	
+	mov	r8, #0			@@ reset col tracker
+	add	r9, #1			@@ increment row by 1
+
+	ldr	r0, [r5, #4]		@@ get height of image
+	cmp	r9, r0			@@ if row is less than height, draw loop again
+	blt	drawLoop
+
+checkSize:
+	cmp	r7, r10			@@ Compares pixels drawn to total pixels
+	blt	drawLoop
+	pop	{r4-r10, lr}
+	bx	lr	
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
