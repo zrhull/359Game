@@ -148,13 +148,13 @@ drawPadle:
 	mov	r6, r1
 	mov	r7, r0
 	add	r4, r4, r0
-	str	r4, [r3]		@ Store the new x coord
 	mov	r2, #0x2FE0
 	cmp	r4, #140		@ Cannot go past the left border
 	ble	donePadle
-	mov	r5, #580
+	mov	r5, #540
 	cmp	r4, r5			@ Cannot go past the right border
 	bge	donePadle
+	str	r4, [r3]		@ Store new location of paddle
 yLoop:
 	mov	r5, #0
 	mov	r0, r4
@@ -176,7 +176,7 @@ done1:
 startErase:
 	cmp	r7, #0			@ Check if offset is positive or negative
 	addlt	r0, r4, #80		@ If offset is + add 80 pixels to start erasing
-	addgt	r0, r4, r7			@ if offset is - the offset to start erasing
+	subgt	r0, r4, r7			@ if offset is - the offset to start erasing
 	mov	r5, #0
 	mov	r2, #0x00000000
 xLoopErase:
