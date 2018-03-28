@@ -37,9 +37,6 @@ Driver:
 	bl	printf
 
 buttonWasPressed:
-	ldr	r0, =pressBut			@ Print to ask for a button/ might need to go before this function
-	bl	printf
-	
 
 newButton:
 	ldr	r5, =buttons
@@ -54,23 +51,14 @@ newButton:
 
 	tst	r9, #(1<<15)			@ 12 individual bit testers to see if
 	bne	Yc				@ the button was pressed
-	bl	printButton			@ print "you have pressed"
-	ldr	r0, =B				@ test for B
-	bl	printf
 	b	done
 Yc:
 	tst	r9, #(1<<14)			@ test for Y
 	bne	Slc
-	bl	printButton			@ print "you have pressed"
-	ldr	r0, =Y
-	bl	printf
 	b	done
 Slc:
 	tst	r9, #(1<<13)			@ test for Sl
 	bne	Stc
-	bl	printButton			@ print "you have pressed"
-	ldr	r0, =Sl
-	bl	printf
 	b	done
 Stc:
 	tst	r9, #(1<<12)			@ test for St
@@ -79,74 +67,50 @@ Stc:
 Upc:
 	tst	r9, #(1<<11)			@ test for Joy pad up
 	bne	Downc
-	bl	printButton			@ print "you have pressed"
-	ldr	r0, =Up
-	bl	printf
 	b	done
 Downc:
 	tst	r9, #(1<<10)			@ test for joy pad down
 	bne	Leftc
-	bl	printButton			@ print "you have pressed"
-	ldr	r0, =Down
-	bl	printf
 	b	done
 Leftc:
 	tst	r9, #(1<<9)			@ test for joy pad left
 	bne	Rightc
-	bl	printButton			@ print "you have pressed"
-	ldr	r0, =Left
-	bl	printf
 	tst	r9, #(1<<7)
-	moveq	r0, #-10
-	movne	r0, #-5
+	moveq	r0, #-6
+	movne	r0, #-3
 	bl	drawPadle
 	b	done
 Rightc:
 	tst	r9, #(1<<8)			@ test for joy pad right
 	bne	Ac
-	bl	printButton			@ print "you have pressed"
-	ldr	r0, =Right
-	bl	printf
 	tst	r9, #(1<<7)
-	moveq	r0, #10
-	movne	r0, #5
+	moveq	r0, #6
+	movne	r0, #3
 	bl	drawPadle
 	b	done
 Ac:
 	tst	r9, #(1<<7)			@ test for A
 	bne	Xc
-	bl	printButton			@ print "you have pressed"
-	ldr	r0, =A
-	bl	printf
 	b	done
 Xc:
 	tst	r9, #(1<<6)			@ test for X
 	bne	Lc
-	bl	printButton			@ print "you have pressed"
-	ldr	r0, =X
-	bl	printf
 	b	done
 	bl	printf
 Lc:
 	tst	r9, #(1<<5)			@ test for left bumper
 	bne	Rc
-	bl	printButton			@ print "you have pressed"
-	ldr	r0, =L
-	bl	printf
 	b	done
 Rc:
 	tst	r9, #(1<<4)			@ test for right bumper
 	bne	done
-	bl	printButton			@ print "you have pressed"
-	ldr	r0, =R
-	bl	printf
 	
 	tst	r9, #(1<<3)			@ not used as of now
 	tst	r9, #(1<<2)
 	tst	r9, #(1<<1)
 	tst	r9, #(1<<0)
 done:	
-	mov	r0, #52000			@ delay while the button is being pushed
+	mov	r0, #30000			@ delay while the button is being pushed
 	bl	delayMicroseconds
 
 	ldr	r0, =buttons			@ reset buttons
@@ -307,10 +271,6 @@ terminate:				@ end the program
 
 hello:	.asciz	"Created By: Zachary Hull\r\n"
 
-pressBut:	.asciz	"\r\nPlease press a button...\r\n"
-
-pressed:	.asciz	"\r\nYou have pressed "
-
 progTerm:	.asciz	"Program is terminating...\r\n"
 
 i:		.int	0x0
@@ -324,28 +284,4 @@ lrSave2:	.int	0x00000000
 lastPressed:	.int	0x0000
 
 buttons:	.int	0x0000
-
-B:		.asciz	"B\r\n"
-
-Y:		.asciz	"y\r\n"
-
-Sl:		.asciz	"Select\r\n"
-
-St:		.asciz	"Start\r\n"
-
-Up:		.asciz	"Joy-pad Up\r\n"
-
-Down:		.asciz	"Joy-pad Down\r\n"
-
-Left:		.asciz	"Joy-pad Left\r\n"
-
-Right:		.asciz	"Joy-pad Right\r\n"
-
-A:		.asciz	"A\r\n"
-
-X:		.asciz	"X\r\n"
-
-L:		.asciz	"Left\r\n"
-
-R:		.asciz	"Right\r\n"
 
