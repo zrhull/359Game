@@ -1,4 +1,3 @@
-
 @ Code section
 .section .text
 
@@ -8,91 +7,94 @@ main:
 	ldr 		r0, =frameBufferInfo 	@ frame buffer information structure
 	bl		initFbInfo
 
-	mov	r4, #100
-	mov	r5, #100
-	mov	r7, #0
+	mov	r5, #120		@ Start of game boarder for Y
+	mov	r7, #0			@ Y loop counter
 BackgroundStartY:
-	mov	r3, #0
-	mov	r4, #100
+	mov	r3, #0			@ Reset X counter
+	mov	r4, #120		@ Reset X offset
 BackgroundStart:
 	ldr	r2, =background
-	mov	r0, r4
+	mov	r0, r4			@ Give picture location X and Y coords as parameters
 	mov	r1, r5
-	cmp	r3, #14
+	cmp	r3, #14			@ Max X
 	bge	doneRow
 	bl	drawHardTile
-	add	r4, #40
-	add	r3, #1
+	add	r4, #40			@ Add 40 to X offset
+	add	r3, #1			@ Increment X loop counter
 	b	BackgroundStart
 doneRow:
-	add	r5, #25
-	add	r7, #1
+	add	r5, #25			@ Increment Y offset
+	add	r7, #1			@ increment Y loop counter and loop again if needed
 	cmp	r7, #28
 	blt	BackgroundStartY
 
 	mov	r6, #0			@ map brick offset
-	mov	r9, #100		@ y initial offset
+	mov	r9, #120		@ y initial offset
 	mov	r11, #0			@ x # of bricks
 yTileLoop:
-	mov	r8, #100		@ x initail offset
-	mov	r11, #0
+	mov	r8, #120		@ x initail offset
+	mov	r11, #0			@ X loop counter
 TileLoop:
-	cmp	r11, #14
+	cmp	r11, #14		@ max X loops
 	bge	bot
-	mov	r0, r8
+	mov	r0, r8			@ Give X and Y offsets as parameters
 	mov	r1, r9
 
 	ldr	r4, =map
-	ldr	r10, [r4, r6]
-	cmp	r10, #9
+	ldr	r10, [r4], #4		@ Load memory value on map
+	cmp	r10, #9			@ #9 is right hand wall peice
 stop:
 	ldreq	r2, =wallRight
-	bleq	drawHardTile
-	cmp	r10, #8
+	bleq	drawHardTile		@ Draw the wall peice
+	cmp	r10, #8			@ #8 is right wall corner
 	ldreq	r2, =wallRightCorner
 	bleq	drawHardTile
-	cmp	r10, #7
+	cmp	r10, #7			@ #7 is the ceiling
 	ldreq	r2, =ceiling
 	bleq	drawHardTile
-	cmp	r10, #6
+	cmp	r10, #6			@ #6 is the left wall corner
 	ldreq	r2, =wallLeftCorner
 	bleq	drawHardTile
-	cmp	r10, #5
+	cmp	r10, #5			@ #5 is the left wall
 	ldreq	r2, =wallLeft
 	bleq	drawHardTile
-	cmp	r10, #3
-	moveq	r2, #0xFF00
+	cmp	r10, #3			@ #3 is red color
+	ldreq	r2, =red
+	ldreq	r2, [r2]
 	beq	draw
-	cmp	r10, #2
-	moveq	r2, #0xC60
+	cmp	r10, #2			@ #2 is orange color
+	ldreq	r2, =orange
+	ldreq	r2, [r2]
 	beq	draw
-	cmp	r10, #1
-	moveq	r2, #0xFA0
+	cmp	r10, #1			@ #1 is yellow color
+	ldreq	r2, =yellow
+	ldreq	r2, [r2]
 draw:
-	mov	r0, r8
+	mov	r0, r8			@ Reset x and Y offsets
 	mov	r1, r9
-	cmp	r10, #4
+	cmp	r10, #4			@ Draw a tile if the map value is less than 4
 	bllt	drawTile	
 
-	add	r8, #40
-	add	r6, #4
+	add	r8, #40			@ Increment X offset
 	add	r11, #1			@ x brick counter increment
 	b	TileLoop
 bot:
-	add	r9, #25
-	cmp	r9, #800
+	add	r9, #25			@ Increment Y offset
+	cmp	r9, #820		@ Max Y value
 	bge	bot2
 	b	yTileLoop
 bot2:
-	mov	r0, #0
+	mov	r0, #0			@ Draw the paddle
 	bl	drawPadle
 
-	bl	Driver
+	bl	Driver			@ Initiate Driver
 
 	@ stop
 	haltLoop$:
 		b	haltLoop$
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
 @ Draw Image
 @ r0 - address
 @ r1 - address of wh
@@ -154,8 +156,9 @@ DrawPixel:
 	push	{r1, r3, r4, r5, r6}
 	offset	.req	r4
 	ldr	r5, =frameBufferInfo
-	@@mov	r6, #0xff575757		@ Invalid constant error here			
-	@@cmp	r2, r6
+	ldr	r6, =magenta		@ Invalid constant error here
+	ldr	r6, [r6]
+	cmp	r2, r6
 	beq	dontDraw		@ If its this color dont draw it
 					@ offset = (y * width) + x
 	
@@ -175,65 +178,64 @@ dontDraw:
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 .global	drawPadle
-drawPadle:
+drawPadle:				@ This function is used to draw/ update the paddle
 	@ r0 = x offset
-	push	{r4, r5, r6, r7, r8, lr}
+	push	{r4, r5, r6, r7, r8, r9, lr}
+
 	ldr	r3, =paddle
 	ldr	r4, [r3]		@ Load the (x, y) position of the paddle
-	ldr	r1, [r3, #4]
-	mov	r6, r1
-	mov	r7, r0
-	add	r4, r4, r0
-	mov	r2, #0x2FE0
-	cmp	r4, #140		@ Cannot go past the left border
-	ble	donePadle
-	mov	r5, #540
-	cmp	r4, r5			@ Cannot go past the right border
-	bge	donePadle
-	str	r4, [r3]		@ Store new location of paddle
-yLoop:
-	mov	r5, #0
-	mov	r0, r4
-xloop:
-	cmp	r5, #80
-	bge	done3
-	bl	DrawPixel
-	add	r5, #1
-	add	r0, #1
-	b	xloop
-done3:
-	add	r1, #1
-	mov	r3, #780
-	cmp	r1, r3
-	bge	done1
-	b	yLoop
-done1:
-	mov	r1, r6			@ Reset Y
-startErase:
-	cmp	r7, #0			@ Check if offset is positive or negative
-	addlt	r0, r4, #80		@ If offset is + add 80 pixels to start erasing
-	subgt	r0, r4, r7			@ if offset is - the offset to start erasing
-	mov	r5, #0
-	mov	r2, #0x00000000
-xLoopErase:
-	cmp	r5, r7
-	beq	doneDone
-	bl	DrawPixel
-	cmp	r5, r7
-	addgt	r5, #-1
-	addlt	r5, #1
-	add	r0, #1
-	b	xLoopErase
-doneDone:
-	add	r1, #1
-	mov	r3, #780
-	cmp	r1, r3
-	bge	donePadle
-	b	startErase
-donePadle:
-	
+	ldr	r6, [r3, #4]
+	add	r4, r0, r4		@ Save paddle offset
+	str	r4, [r3]		@ Save new X value
 
-	pop	{r4, r5, r6, r7, r8, lr}
+	cmp	r4, #160		@ Cannot go past the left boarder
+	ble	doneYPaddle
+	mov	r5, #560		@ Cannot go past the right boarder
+	cmp	r4, r5
+	bge	doneYPaddle
+ReDrawBackground:			@ Draw the background
+	mov	r3, #770		@ Y offset for background tiles
+	mov	r8, #40			@ Calculate the x coord
+	sdiv	r7, r4, r8
+	sub	r7, #1
+	mul	r7, r8			@ Initail x coord for re-drawing background
+	mov	r5, #0			@ X loop counter
+reDraw:
+	ldr	r2, =background		
+	mov	r0, r7			@ Send background and x and y coords as parameters
+	mov	r1, r3
+	cmp	r0, #120		@ Do not draw the background if its actually a boarder
+	ble	skip
+	cmp	r0, #640
+	bge	skip
+	bl	drawHardTile		@ Draw background tile
+skip:
+	add	r5, #1			@ Increment counter
+	add	r7, #40			@ Increment x offset
+	cmp	r5, #5			@ If looped 3 times stop
+	blt	reDraw
+
+	mov	r1, r6			@ Time to draw the paddle/ y offset
+	ldr	r7, =Paddle		
+	add	r5, r1, #15		@ Y loop counter maximum
+YLoopPaddle:
+	mov	r0, r4			@ Reset X offset
+	mov	r6, #0			@ Reset X counter
+XLoopPaddle:
+	cmp	r6, #80			@ Length of paddle
+	bge	doneXPaddle
+	ldr	r2, [r7], #4		@ Load pixel color from memory
+	bl	DrawPixel
+	add	r6, #1			@ Increment X offset and counter
+	add	r0, #1
+	b	XLoopPaddle
+doneXPaddle:
+	add	r1, #1			@ Increment Y offset and loop 
+	cmp	r1, r5
+	blt	YLoopPaddle
+doneYPaddle:				@ Finished paddle
+
+	pop	{r4, r5, r6, r7, r8, r9, lr}
 	bx	lr
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -305,34 +307,31 @@ end:
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-drawHardTile:
+drawHardTile:				@ This function is used to draw a tile with a data stored image
 	@ r0 = x coord
 	@ r1 = y coord
 	@ r2 = tile location
 	push	{r4, r5, r6, r7, lr}
 
-	mov	r7, r2
+	mov	r7, r2				@ Store given coords and mov memery location
 	mov	r4, r0
-	add	r5, r1, #25
+	add	r5, r1, #25			@ Y maximum depth
 YBackLoop:
-	mov	r0, r4
-	mov	r6, #0	
+	mov	r0, r4				@ Reset X offset
+	mov	r6, #0				@ Reset X counter
 XBackLoop:
-	cmp	r6, #40
+	cmp	r6, #40				@ Brick length max
 	bge	doneX
-	ldr	r2, [r7], #4
+	ldr	r2, [r7], #4			@ Load pixel color from memory
 	bl	DrawPixel
-	add	r6, #1
+	add	r6, #1				@ Increment X offset and counter
 	add	r0, #1
 	b	XBackLoop
 doneX:
-	add	r1, #1
+	add	r1, #1				@ Increment Y offset loop if needed
 	cmp	r1, r5
 	blt	YBackLoop
 doneY:
-
-
-
 	pop	{r4, r5, r6, r7, lr}
 	bx	lr
 
@@ -353,8 +352,21 @@ frameBufferInfo:
 
 .global	paddle
 paddle:
-	.int	340
-	.int	765
+	.int	360
+	.int	780
+
+magenta:			@ Transparent color
+	.int	0xFFF05EF0
+
+red:
+	.int	0xFFFF0000
+
+orange:
+	.int	0xFFFF8B00
+
+yellow:
+	.int	0xFFFFEE00
+
 
 .global	map
 map:
@@ -386,6 +398,9 @@ map:
 	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
 	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
 	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
+
+
+
 
 
 
