@@ -1,3 +1,4 @@
+
 @ Code section
 .section .text
 
@@ -31,6 +32,7 @@ doneRow:
 	mov	r6, #0			@ map brick offset
 	mov	r9, #120		@ y initial offset
 	mov	r11, #0			@ x # of bricks
+	ldr	r4, =map
 yTileLoop:
 	mov	r8, #120		@ x initail offset
 	mov	r11, #0			@ X loop counter
@@ -39,8 +41,6 @@ TileLoop:
 	bge	bot
 	mov	r0, r8			@ Give X and Y offsets as parameters
 	mov	r1, r9
-
-	ldr	r4, =map
 	ldr	r10, [r4], #4		@ Load memory value on map
 	cmp	r10, #9			@ #9 is right hand wall peice
 stop:
@@ -398,9 +398,4 @@ map:
 	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
 	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
 	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
-
-
-
-
-
 
