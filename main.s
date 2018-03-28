@@ -7,7 +7,29 @@ main:
 	@ ask for frame buffer information
 	ldr 		r0, =frameBufferInfo 	@ frame buffer information structure
 	bl		initFbInfo
-	
+
+	mov	r4, #100
+	mov	r5, #100
+	mov	r7, #0
+BackgroundStartY:
+	mov	r3, #0
+	mov	r4, #100
+BackgroundStart:
+	ldr	r2, =background
+	mov	r0, r4
+	mov	r1, r5
+	cmp	r3, #14
+	bge	doneRow
+	bl	drawHardTile
+	add	r4, #40
+	add	r3, #1
+	b	BackgroundStart
+doneRow:
+	add	r5, #25
+	add	r7, #1
+	cmp	r7, #28
+	blt	BackgroundStartY
+
 	mov	r6, #0			@ map brick offset
 	mov	r9, #100		@ y initial offset
 	mov	r11, #0			@ x # of bricks
@@ -15,28 +37,43 @@ yTileLoop:
 	mov	r8, #100		@ x initail offset
 	mov	r11, #0
 TileLoop:
+	cmp	r11, #14
+	bge	bot
+	mov	r0, r8
+	mov	r1, r9
+
 	ldr	r4, =map
 	ldr	r10, [r4, r6]
+	cmp	r10, #9
+stop:
+	ldreq	r2, =wallRight
+	bleq	drawHardTile
+	cmp	r10, #8
+	ldreq	r2, =wallRightCorner
+	bleq	drawHardTile
+	cmp	r10, #7
+	ldreq	r2, =ceiling
+	bleq	drawHardTile
+	cmp	r10, #6
+	ldreq	r2, =wallLeftCorner
+	bleq	drawHardTile
 	cmp	r10, #5
-	moveq	r2, #0xFF00
-	beq	draw
+	ldreq	r2, =wallLeft
+	bleq	drawHardTile
 	cmp	r10, #3
-	moveq	r2, #0xFF0000
+	moveq	r2, #0xFF00
 	beq	draw
 	cmp	r10, #2
 	moveq	r2, #0xC60
 	beq	draw
 	cmp	r10, #1
 	moveq	r2, #0xFA0
-	movne	r2, #0x00000000
-	
 draw:
-	cmp	r11, #14
-	bge	bot
 	mov	r0, r8
 	mov	r1, r9
-	bl	drawTile
-	
+	cmp	r10, #4
+	bllt	drawTile	
+
 	add	r8, #40
 	add	r6, #4
 	add	r11, #1			@ x brick counter increment
@@ -51,7 +88,6 @@ bot2:
 	bl	drawPadle
 
 	bl	Driver
-
 
 	@ stop
 	haltLoop$:
@@ -109,19 +145,18 @@ checkSize:
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
 @ Draw Pixel
 @  r0 - x
 @  r1 - y
 @  r2 - colour
 
 DrawPixel:
-	push	{r1, r3, r4, r5}
+	push	{r1, r3, r4, r5, r6}
 	offset	.req	r4
-	ldr	r5, =frameBufferInfo	
-
+	ldr	r5, =frameBufferInfo
+	@@mov	r6, #0xff575757		@ Invalid constant error here			
+	@@cmp	r2, r6
+	beq	dontDraw		@ If its this color dont draw it
 					@ offset = (y * width) + x
 	
 	ldr	r3, [r5, #4]		@ r3 = width
@@ -133,7 +168,8 @@ DrawPixel:
 					@ store the colour (word) at frame buffer pointer + offset
 	ldr	r1, [r5]		@ r0 = frame buffer pointer
 	str	r2, [r1, offset]
-	pop	{r1, r3, r4, r5}
+dontDraw:
+	pop	{r1, r3, r4, r5, r6}
 	bx	lr
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -269,6 +305,38 @@ end:
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
+drawHardTile:
+	@ r0 = x coord
+	@ r1 = y coord
+	@ r2 = tile location
+	push	{r4, r5, r6, r7, lr}
+
+	mov	r7, r2
+	mov	r4, r0
+	add	r5, r1, #25
+YBackLoop:
+	mov	r0, r4
+	mov	r6, #0	
+XBackLoop:
+	cmp	r6, #40
+	bge	doneX
+	ldr	r2, [r7], #4
+	bl	DrawPixel
+	add	r6, #1
+	add	r0, #1
+	b	XBackLoop
+doneX:
+	add	r1, #1
+	cmp	r1, r5
+	blt	YBackLoop
+doneY:
+
+
+
+	pop	{r4, r5, r6, r7, lr}
+	bx	lr
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 @ Data section
 .section .data
@@ -290,35 +358,34 @@ paddle:
 
 .global	map
 map:
-	.int	5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5
-	.int	5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
-	.int	5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
-	.int	5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
-	.int	5, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 5
-	.int	5, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 5
-	.int	5, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 5
-	.int	5, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 5
-	.int	5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5
-	.int	5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5
-	.int	5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
-	.int	5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
-	.int	5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
-	.int	5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
-	.int	5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
-	.int	5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
-	.int	5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
-	.int	5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
-	.int	5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
-	.int	5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
-	.int	5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
-	.int	5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
-	.int	5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
-	.int	5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
-	.int	5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
-	.int	5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
-	.int	5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
-	.int	5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
-
+	.int	6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 8
+	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
+	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
+	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
+	.int	5, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 9
+	.int	5, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 9
+	.int	5, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 9
+	.int	5, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 9
+	.int	5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 9
+	.int	5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 9
+	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
+	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
+	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
+	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
+	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
+	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
+	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
+	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
+	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
+	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
+	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
+	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
+	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
+	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
+	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
+	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
+	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
+	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
 
 
 
