@@ -187,17 +187,6 @@ bot:	cmp	r2, #16
 	ldr	lr, [r1]			@ load link register
 	bx	lr				@ return
 
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-printButton:				@ function to print what was pressed
-	ldr	r1, =lrSave2	
-	str	lr, [r1]			@ save link register
-	ldr	r0, =pressed			@ print statement
-	bl	printf	
-	ldr	r1, =lrSave2			@ load link register
-	ldr	lr, [r1]		
-	bx	lr				@ return
-
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 readGPIO:				@ read from GPIO (DATA)
