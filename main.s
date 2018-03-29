@@ -1,4 +1,5 @@
 
+
 @ Code section
 .section .text
 
@@ -86,6 +87,8 @@ bot:
 bot2:
 	mov	r0, #0			@ Draw the paddle
 	bl	drawPadle
+	
+	bl	drawBall		@ draw the ball
 
 	bl	Driver			@ Initiate Driver
 
@@ -321,7 +324,7 @@ YBackLoop:
 	mov	r6, #0				@ Reset X counter
 XBackLoop:
 	cmp	r6, #40				@ Brick length max
-	bge	doneX
+	bge	doneXdrawImage
 	ldr	r2, [r7], #4			@ Load pixel color from memory
 	bl	DrawPixel
 	add	r6, #1				@ Increment X offset and counter
@@ -334,6 +337,24 @@ doneX:
 doneY:
 	pop	{r4, r5, r6, r7, lr}
 	bx	lr
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+drawBall:
+	push	{r4, lr}
+
+	ldr	r4, =ball
+	ldr	r0, [r4]
+
+	ldr	r4, =ballDimen
+	ldr	r1, [r4]
+
+	ldr	r4, =ballCoord
+	ldr	r2, [r4]
+
+	bl	drawImage
+
+	pop	{r4, lr}
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
@@ -398,4 +419,6 @@ map:
 	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
 	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
 	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
+
+
 
