@@ -358,6 +358,72 @@ drawBall:
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
+.global	DrawBackground
+DarwBackground:
+	@ r0 = x coord of image
+	@ r1 = y coord of image
+	@ r2 = length of image
+	@ r3 = height of image
+	push	{r4, r5, r6, lr}
+	
+	mov	r4, #40
+	sdiv	r5, r0, r4		
+	mul	r5, r4				@ X offset of background
+	sdiv	r6, r1, r4
+	mul	r6, r4				@ Y offset of background
+
+	sdiv	r8, r2, r4
+	add	r8, #1				@ Get number of background bricks in length
+	sdiv	r3, r4
+	add	r3, #1				@ Get # of background bricks in height
+	mul	r3, r4
+	add	r3, r6				@ Max Y pixel value (For loop counter)
+
+	ldr	r9, =map
+YLoopReDrawBack:
+	mov	r7, #0				@ x loop counter
+	mov	r0, r5 
+XLoopReDrawBack:
+	sdiv	r10, r4
+	mul	r10, r4
+	sub	r10, #3
+	mov	r1, #4
+	mul	r4, r1
+	ldr	r10, [r9, r4]			@ Load value of map position
+	
+	cmp	r10, #10			@ Determin the tile to be drawn
+	ldreq	r2, =background
+	cmp	r10, #3
+	ldreq	r2, =red
+	cmp	r10, #2
+	ldreq	r2, =orange
+	cmp	r10, #1
+	ldreq	r2, =yellow
+
+	mov	r1, r6
+	cmp	r7, r8
+	bge	doneXLoopBack
+	cmp	r7, #640
+	bge	stopDrawing
+
+	cmp	r10, #4
+	blgt	drawHardTile
+	bllt	drawTile
+	add	r7, #1
+	add	r0, #40
+	b	XLoopReDrawBack
+doneXLoopBack:
+	add	r6, #25
+	cmp	r6, r3
+	bgt	YLoopReDrawBack
+stopDrawing:
+
+
+	pop	{r4, r5, r6, lr}
+	bx	lr
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
 @ Data section
 .section .data
 
