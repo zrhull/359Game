@@ -3,8 +3,8 @@
 @ Code section
 .section .text
 
-.global main
-main:
+.global setup
+setup:
 	@ ask for frame buffer information
 	ldr 		r0, =frameBufferInfo 	@ frame buffer information structure
 	bl		initFbInfo
@@ -85,12 +85,6 @@ bot:
 	bge	bot2
 	b	yTileLoop
 bot2:
-	mov	r0, #0			@ Draw the paddle
-	bl	drawPadle
-	
-	bl	drawBall		@ draw the ball
-
-	bl	Driver			@ Initiate Driver
 
 	@ stop
 	haltLoop$:
@@ -156,7 +150,7 @@ checkSize:
 @  r2 - colour
 
 DrawPixel:
-	push	{r1, r3, r4, r5, r6}
+	push	{r1, r3-r6}
 	offset	.req	r4
 	ldr	r5, =frameBufferInfo
 	ldr	r6, =magenta		@ Invalid constant error here
@@ -175,7 +169,7 @@ DrawPixel:
 	ldr	r1, [r5]		@ r0 = frame buffer pointer
 	str	r2, [r1, offset]
 dontDraw:
-	pop	{r1, r3, r4, r5, r6}
+	pop	{r1, r3-r6}
 	bx	lr
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -183,7 +177,7 @@ dontDraw:
 .global	drawPadle
 drawPadle:				@ This function is used to draw/ update the paddle
 	@ r0 = x offset
-	push	{r4, r5, r6, r7, r8, r9, lr}
+	push	{r4-r9, lr}
 
 	ldr	r3, =paddle
 	ldr	r4, [r3]		@ Load the (x, y) position of the paddle
@@ -238,16 +232,17 @@ doneXPaddle:
 	blt	YLoopPaddle
 doneYPaddle:				@ Finished paddle
 
-	pop	{r4, r5, r6, r7, r8, r9, lr}
+	pop	{r4-r9, lr}
 	bx	lr
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
+.global	drawTile
 drawTile:				@ Draws a tile with black lines around it.
 	@ r0 = given x offset
 	@ r1 = given y offset
 	@ r2 = given color
-	push	{r4, r5, r6, lr}
+	push	{r4-r6, lr}
 	mov	r3, r0				@ Save values given for comparing.
 	mov	r5, r1
 	mov	r6, r2
@@ -305,16 +300,17 @@ done10:
 	b	ringSideY
 end:
 
-	pop	{r4, r5, r6, lr}
+	pop	{r4-r6, lr}
 	bx	lr
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
+.global	drawHardTile
 drawHardTile:				@ This function is used to draw a tile with a data stored image
 	@ r0 = x coord
 	@ r1 = y coord
 	@ r2 = tile location
-	push	{r4, r5, r6, r7, lr}
+	push	{r4-r7, lr}
 
 	mov	r7, r2				@ Store given coords and mov memery location
 	mov	r4, r0
@@ -324,7 +320,7 @@ YBackLoop:
 	mov	r6, #0				@ Reset X counter
 XBackLoop:
 	cmp	r6, #40				@ Brick length max
-	bge	doneXdrawImage
+	bge	doneX
 	ldr	r2, [r7], #4			@ Load pixel color from memory
 	bl	DrawPixel
 	add	r6, #1				@ Increment X offset and counter
@@ -335,36 +331,38 @@ doneX:
 	cmp	r1, r5
 	blt	YBackLoop
 doneY:
-	pop	{r4, r5, r6, r7, lr}
+	pop	{r4-r7, lr}
 	bx	lr
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
+.global	drawBall
 drawBall:
 	push	{r4, lr}
 
-	ldr	r4, =ball
-	ldr	r0, [r4]
+	ldr	r0, =ball
+	@@ldr	r0, [r4]
 
-	ldr	r4, =ballDimen
-	ldr	r1, [r4]
+	ldr	r1, =ballDimen
+	@@ldr	r1, [r4]
 
-	ldr	r4, =ballCoord
-	ldr	r2, [r4]
+	ldr	r2, =ballCoord
+	@@ldr	r2, [r4]
 
 	bl	drawImage
 
-	pop	{r4, pc}
+	pop	{r4, lr}
+	bx	lr
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 .global	DrawBackground
-DarwBackground:
+DrawBackground:
 	@ r0 = x coord of image
 	@ r1 = y coord of image
 	@ r2 = length of image
 	@ r3 = height of image
-	push	{r4, r5, r6, lr}
+	push	{r4-r10, lr}
 	
 	mov	r4, #40
 	sdiv	r5, r0, r4		
@@ -419,7 +417,7 @@ doneXLoopBack:
 stopDrawing:
 
 
-	pop	{r4, r5, r6, lr}
+	pop	{r4-r10, lr}
 	bx	lr
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -441,6 +439,14 @@ frameBufferInfo:
 paddle:
 	.int	360
 	.int	780
+
+ballCoord:
+	.int	396
+	.int	772
+
+ballDimen:
+	.int	8
+	.int	8
 
 magenta:			@ Transparent color
 	.int	0xFFF05EF0
