@@ -176,50 +176,28 @@ dontDraw:
 
 .global	drawPadle
 drawPadle:				@ This function is used to draw/ update the paddle
-	@ r0 = x offset
+	@ r0 = paddle image
 	push	{r4-r9, lr}
 
 	ldr	r3, =paddle
 	ldr	r4, [r3]		@ Load the (x, y) position of the paddle
 	ldr	r6, [r3, #4]
-	add	r4, r0, r4		@ Save paddle offset
-	str	r4, [r3]		@ Save new X value
+	ldr	r8, [r3, #8]		@ Paddle length
 
 	cmp	r4, #160		@ Cannot go past the left boarder
 	ble	doneYPaddle
-	mov	r5, #560		@ Cannot go past the right boarder
-	cmp	r4, r5
+	mov	r3, #560		@ Cannot go past the right boarder
+	cmp	r4, r3
 	bge	doneYPaddle
-ReDrawBackground:			@ Draw the background
-	mov	r3, #770		@ Y offset for background tiles
-	mov	r8, #40			@ Calculate the x coord
-	sdiv	r7, r4, r8
-	sub	r7, #1
-	mul	r7, r8			@ Initail x coord for re-drawing background
-	mov	r5, #0			@ X loop counter
-reDraw:
-	ldr	r2, =background		
-	mov	r0, r7			@ Send background and x and y coords as parameters
-	mov	r1, r3
-	cmp	r0, #120		@ Do not draw the background if its actually a boarder
-	ble	skip
-	cmp	r0, #640
-	bge	skip
-	bl	drawHardTile		@ Draw background tile
-skip:
-	add	r5, #1			@ Increment counter
-	add	r7, #40			@ Increment x offset
-	cmp	r5, #5			@ If looped 3 times stop
-	blt	reDraw
 
-	mov	r1, r6			@ Time to draw the paddle/ y offset
-	ldr	r7, =Paddle		
+	mov	r7, r0			@ Move image location to r7
+	mov	r1, r6			@ Y offset
 	add	r5, r1, #15		@ Y loop counter maximum
 YLoopPaddle:
 	mov	r0, r4			@ Reset X offset
 	mov	r6, #0			@ Reset X counter
 XLoopPaddle:
-	cmp	r6, #80			@ Length of paddle
+	cmp	r6, r8			@ Length of paddle
 	bge	doneXPaddle
 	ldr	r2, [r7], #4		@ Load pixel color from memory
 	bl	DrawPixel
@@ -356,8 +334,8 @@ drawBall:
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-.global	DrawBackground
-DrawBackground:
+.global	DrawBackground			@ Draws the background over the area of the
+DrawBackground:				@ given object
 	@ r0 = x coord of image
 	@ r1 = y coord of image
 	@ r2 = length of image
@@ -422,11 +400,24 @@ stopDrawing:
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
+.global	PaddleCollision:
+PaddleCollision:
+	push	{r4-r7, lr}
+
+	ldr	r0, =paddle
+	ldr	r1, [r0]		@ X origin of paddle
+	ldr	r2, [r0, #4]		@ Y origin of paddle
+	
+	
+	
+
+	pop	{r4-r7, lr}
+	bx	lr
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
 @ Data section
 .section .data
-
-lrSave:
-	.int	0x00000000
 
 .align
 .globl frameBufferInfo
@@ -435,18 +426,31 @@ frameBufferInfo:
 	.int	0		@ screen width
 	.int	0		@ screen height
 
-.global	paddle
+.global	paddle			@ Coordinates of the paddle/ length
 paddle:
 	.int	360
 	.int	780
+	.int	80
 
+.global	ballCoord
 ballCoord:
-	.int	396
+	.int	396		@ Coordinates of ball
 	.int	772
 
+.global	ballDimen
 ballDimen:
+	.int	8		@ Dimensions on the ball
 	.int	8
-	.int	8
+
+.global	powerUp1
+powerUp1:
+	.int	0		@ Coordinates of powerUp1
+	.int	0
+
+.global	powerUp2
+powerUp2:
+	.int	0		@ Coordinates of powerUp2
+	.int	0
 
 magenta:			@ Transparent color
 	.int	0xFFF05EF0
