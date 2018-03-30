@@ -9,7 +9,7 @@ setup:
 	ldr 		r0, =frameBufferInfo 	@ frame buffer information structure
 	bl		initFbInfo
 
-	mov	r5, #120		@ Start of game boarder for Y
+	mov	r5, #125		@ Start of game boarder for Y
 	mov	r7, #0			@ Y loop counter
 BackgroundStartY:
 	mov	r3, #0			@ Reset X counter
@@ -31,7 +31,7 @@ doneRow:
 	blt	BackgroundStartY
 
 	mov	r6, #0			@ map brick offset
-	mov	r9, #120		@ y initial offset
+	mov	r9, #125		@ y initial offset
 	mov	r11, #0			@ x # of bricks
 	ldr	r4, =map
 yTileLoop:
@@ -81,7 +81,8 @@ draw:
 	b	TileLoop
 bot:
 	add	r9, #25			@ Increment Y offset
-	cmp	r9, #820		@ Max Y value
+	mov	r12, #825
+	cmp	r9, r12		@ Max Y value
 	bge	bot2
 	b	yTileLoop
 bot2:
@@ -319,14 +320,8 @@ drawBall:
 	push	{r4, lr}
 
 	ldr	r0, =ball
-	@@ldr	r0, [r4]
-
 	ldr	r1, =ballDimen
-	@@ldr	r1, [r4]
-
 	ldr	r2, =ballCoord
-	@@ldr	r2, [r4]
-
 	bl	drawImage
 
 	pop	{r4, lr}
@@ -343,16 +338,17 @@ DrawBackground:				@ given object
 	push	{r4-r10, lr}
 	
 	mov	r4, #40
+	mov	r11, #25
 	sdiv	r5, r0, r4		
 	mul	r5, r4				@ X offset of background
-	sdiv	r6, r1, r4
-	mul	r6, r4				@ Y offset of background
+	sdiv	r6, r1, r11
+	mul	r6, r11				@ Y offset of background
 
 	sdiv	r8, r2, r4
 	add	r8, #1				@ Get number of background bricks in length
-	sdiv	r3, r4
+	sdiv	r3, r11
 	add	r3, #1				@ Get # of background bricks in height
-	mul	r3, r4
+	mul	r3, r11
 	add	r3, r6				@ Max Y pixel value (For loop counter)
 
 	ldr	r9, =map
@@ -400,18 +396,53 @@ stopDrawing:
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-.global	PaddleCollision:
+.global	PaddleCollision
 PaddleCollision:
 	push	{r4-r7, lr}
 
 	ldr	r0, =paddle
-	ldr	r1, [r0]		@ X origin of paddle
-	ldr	r2, [r0, #4]		@ Y origin of paddle
+	ldr	r1, [r0]			@ X origin of paddle (Top left x  check pixel)
+	ldr	r2, [r0, #4]
+	ldr	r3, [r0, #8]			@ Length of paddle
+	ldr	r4, =powerUp1Color		@@@@@@@ Have not put the powerup colors into memory yet
+	ldr	r5, =powerUp2Color
+	ldr	r6, =ballColor
 	
-	
-	
+	mov	r0, r1
+	mov	r1, r2				@ Give x and y coords
+Looping:				@ Checks collisions with the top of the paddle
+	bl	getPixelColor			@ Get the color at pixel (x, y)
+	cmp	r0, r4
+	orreq	r10, #4				@ PowerUp1 collected
+	cmp	r0, r5
+	orreq	r10, #2				@ PowerUp2 collected
+	cmp	r0, r6
+	orreq	r10, #1				@ Ball collision
+	add	r0, #7				@ Increment X check pixel
+	cmp	r0, r3				@ Compare pixel with length
+	blt	Looping
 
 	pop	{r4-r7, lr}
+	bx	lr
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+.global	PaddleUpdate
+PaddleUpdate:
+	@ r0 = type of movement (0= right, 1= left, 2= FastRight, 3=FastLeft)
+	push	{r4-r6, lr}
+
+	cmp	r0, #0
+	moveq	r0, #3
+	cmp	r0, #1
+	moveq	r0, #-3
+	cmp	r0, #2
+	moveq	r0, #6
+	cmp	r0, #3
+	moveq	r0, #-6
+	
+
+	pop	{r4-r6, lr}
 	bx	lr
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -429,13 +460,13 @@ frameBufferInfo:
 .global	paddle			@ Coordinates of the paddle/ length
 paddle:
 	.int	360
-	.int	780
+	.int	785
 	.int	80
 
 .global	ballCoord
 ballCoord:
 	.int	396		@ Coordinates of ball
-	.int	772
+	.int	777
 
 .global	ballDimen
 ballDimen:
@@ -463,6 +494,15 @@ orange:
 
 yellow:
 	.int	0xFFFFEE00
+
+powerUp1Color:
+	.int	0x0
+
+powerUp2Color:
+	.int	0x0
+
+ballColor:
+	.int	0xFF99D9Ea
 
 
 .global	map
