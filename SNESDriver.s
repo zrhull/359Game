@@ -17,6 +17,7 @@
 
 .global Driver
 Driver: 
+	push	{r0-r9, lr}
 	bl	getGpioPtr			@ get Gpio base address
 	ldr	r1, =gpioBase
 	str	r0, [r1]			@ store gpio base
@@ -33,11 +34,6 @@ Driver:
 	mov	r1, #1
 	bl	Init_GPIO
 
-	ldr	r0, =hello			@ print creator name
-	bl	printf
-
-buttonWasPressed:
-
 newButton:
 	ldr	r5, =buttons
 	mov	r6, #0				@ reset buttons to 0
@@ -45,99 +41,14 @@ newButton:
 	bl	readSNES			@ call the button function
 	ldr	r9, [r5]			@ save buttons pressed
 
-	mov	r7, #0xffff			@ move 16 1's into a register
-	teq	r9, r7				@ if no button was pressed loop for a new button
-	beq	newButton
-
-	tst	r9, #(1<<15)			@ 12 individual bit testers to see if
-	bne	Yc				@ the button was pressed
-	b	done
-Yc:
-	tst	r9, #(1<<14)			@ test for Y
-	bne	Slc
-	b	done
-Slc:
-	tst	r9, #(1<<13)			@ test for Sl
-	bne	Stc
-	b	done
-Stc:
-	tst	r9, #(1<<12)			@ test for St
-	bne	Upc
-	b	terminate			@ end the program
-Upc:
-	tst	r9, #(1<<11)			@ test for Joy pad up
-	bne	Downc
-	b	done
-Downc:
-	tst	r9, #(1<<10)			@ test for joy pad down
-	bne	Leftc
-	b	done
-Leftc:
-	tst	r9, #(1<<9)			@ test for joy pad left
-	bne	Rightc
-	tst	r9, #(1<<7)
-	moveq	r0, #-6
-	movne	r0, #-3
-	bl	drawPadle
-	b	done
-Rightc:
-	tst	r9, #(1<<8)			@ test for joy pad right
-	bne	Ac
-	tst	r9, #(1<<7)
-	moveq	r0, #6
-	movne	r0, #3
-	bl	drawPadle
-	b	done
-Ac:
-	tst	r9, #(1<<7)			@ test for A
-	bne	Xc
-	b	done
-Xc:
-	tst	r9, #(1<<6)			@ test for X
-	bne	Lc
-	b	done
-	bl	printf
-Lc:
-	tst	r9, #(1<<5)			@ test for left bumper
-	bne	Rc
-	b	done
-Rc:
-	tst	r9, #(1<<4)			@ test for right bumper
-	bne	done
-	
-	tst	r9, #(1<<3)			@ not used as of now
-	tst	r9, #(1<<2)
-	tst	r9, #(1<<1)
-	tst	r9, #(1<<0)
-done:	
-	mov	r0, #30000			@ delay while the button is being pushed
-	bl	delayMicroseconds
-
-	ldr	r0, =buttons			@ reset buttons
-	mov	r1, #0
-	str	r1, [r0]
-
-	mov	r0, #45				@ delay a few micro seconds
-	bl	delayMicroseconds
-	bl	readSNES			@ read buttons
-	ldr	r0, =buttons
-	ldr	r0, [r0]			@ load buttons pressed
-	tst	r0, #(1<<9)
-	beq	buttonWasPressed
-	tst	r0, #(1<<8)
-	beq	buttonWasPressed
-	mov	r11, #0xffff
-	teq	r0, r11				@ test if no buttons were pressed
-	bne	done				@ /if the pressed button was released
-	
-
-	b	buttonWasPressed		@ loop again
+	mov	r0, r9
+	pop	{r0-r9, lr}
+	bx	lr
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 readSNES:				@ function to sample the buttons and returned pressed
-	ldr	r1, =lrSave			@ store the link register
-	str	lr, [r1]
+	push	{lr}
 
 	mov	r0, #1				@ set the clock to 1
 	bl	writeClock			@ rising edge
@@ -152,6 +63,7 @@ readSNES:				@ function to sample the buttons and returned pressed
 	bl	writeLatch			@ call setLatch
 
 	ldr	r0, =i				@ set i = 0
+	ldr	r1, [r0]
 	mov	r1, #0
 	str	r1, [r0]
 	
@@ -183,11 +95,10 @@ pulseLoop:					@ loop for every button
 bot:	cmp	r2, #16
 	blt	pulseLoop			@ compare and branch if i is < 16
 
-	ldr	r1, =lrSave			@ to be returned
-	ldr	lr, [r1]			@ load link register
+	pop	{lr}
 	bx	lr				@ return
 
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 readGPIO:				@ read from GPIO (DATA)
 	ldr	r1, =gpioBase			@ load GPIOBase
@@ -249,8 +160,6 @@ Init_GPIO:				@ set GPIO pin to given function code
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 terminate:				@ end the program
-	ldr	r0, =progTerm			@ print the program is terminated
-	bl	printf
 
 	haltLoop$:  
 		b       haltLoop$
