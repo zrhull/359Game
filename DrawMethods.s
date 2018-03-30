@@ -86,6 +86,10 @@ bot:
 	bge	bot2
 	b	yTileLoop
 bot2:
+	ldr	r2, =PowerUp1
+	mov	r0, #120
+	mov	r1, #125
+	bl	drawHardTile
 
 	@ stop
 	haltLoop$:
@@ -331,12 +335,14 @@ drawBall:
 
 .global	DrawBackground			@ Draws the background over the area of the
 DrawBackground:				@ given object
-	@ r0 = x coord of image
-	@ r1 = y coord of image
-	@ r2 = length of image
-	@ r3 = height of image
-	push	{r4-r10, lr}
+	@ r0 = location of objects coords
+	@ r1 = location of objects dimensons
+	push	{r4-r12, lr}
 	
+	ldr	r3, [r1, #4]			@ Height of object
+	ldr	r2, [r1]			@ Width of object
+	ldr	r1, [r0, #4]			@ Y coord of object
+	ldr	r0, [r0]			@ X coord of object
 	mov	r4, #40
 	mov	r11, #25
 	sdiv	r5, r0, r4		
@@ -354,14 +360,18 @@ DrawBackground:				@ given object
 	ldr	r9, =map
 YLoopReDrawBack:
 	mov	r7, #0				@ x loop counter
-	mov	r0, r5 
+	mov	r12, r5 
 XLoopReDrawBack:
-	sdiv	r10, r4
-	mul	r10, r4
-	sub	r10, #3
+	sdiv	r10, r5, r4			@ # of bricks from the screen wall
+	sub	r10, #3				@ Element # in the row of the map
+	sdiv	r2, r6, r11			@ # of bricks from the screen ceiling
+	sub	r2, #5				@ Row #
+	mov	r1, #14
+	mul	r2, r1				@ The first element of the row
 	mov	r1, #4
-	mul	r4, r1
-	ldr	r10, [r9, r4]			@ Load value of map position
+	add	r10, r2				@ The element in the map
+	mul	r10, r1				@ The offset of the element in the map
+	ldr	r10, [r9, r10]			@ Load value of map position
 	
 	cmp	r10, #10			@ Determin the tile to be drawn
 	ldreq	r2, =background
@@ -372,33 +382,34 @@ XLoopReDrawBack:
 	cmp	r10, #1
 	ldreq	r2, =yellow
 
-	mov	r1, r6
-	cmp	r7, r8
+	mov	r1, r6				@ Y offset for a parameter
+	mov	r0, r12
+	cmp	r7, r8				@ Compare X loop counter to # of bricks to draw
 	bge	doneXLoopBack
-	cmp	r7, #640
-	bge	stopDrawing
+	cmp	r6, #640			@ Dont Draw over the boarder
+	bge	doneXLoopBack
 
-	cmp	r10, #4
-	blgt	drawHardTile
-	bllt	drawTile
-	add	r7, #1
-	add	r0, #40
+	cmp	r10, #4				@ Compare the value in the map
+	blgt	drawHardTile			@ Draw picture
+	bllt	drawTile			@ Draw color
+	add	r7, #1				@ Increment X loop counter
+	add	r12, #40			@ Increment X offset
 	b	XLoopReDrawBack
 doneXLoopBack:
-	add	r6, #25
-	cmp	r6, r3
+	add	r6, #25				@ Increment Y offset
+	cmp	r6, r3				@ Compare number of bricks to draw down
 	bgt	YLoopReDrawBack
 stopDrawing:
 
 
-	pop	{r4-r10, lr}
+	pop	{r4-r12, lr}
 	bx	lr
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 .global	PaddleCollision
-PaddleCollision:
-	push	{r4-r7, lr}
+PaddleCollision:			@ Collisions with the paddle, checks both sides and the top
+	push	{r4-r10, lr}
 
 	ldr	r0, =paddle
 	ldr	r1, [r0]			@ X origin of paddle (Top left x  check pixel)
@@ -407,40 +418,78 @@ PaddleCollision:
 	ldr	r4, =powerUp1Color		@@@@@@@ Have not put the powerup colors into memory yet
 	ldr	r5, =powerUp2Color
 	ldr	r6, =ballColor
+	sub	r2, #2
 	
-	mov	r0, r1
-	mov	r1, r2				@ Give x and y coords
-Looping:				@ Checks collisions with the top of the paddle
-	bl	getPixelColor			@ Get the color at pixel (x, y)
+	add	r3, r3, r1
+	mov	r9, r2				@ save Y
+	mov	r7, r1				@ save X
+	add	r8, r2, #15			@ set Y min
+LoopLeftSide:				@ Check left side of paddle (Bottom/ 6 up/ 12 up)
+	mov	r0, r7				@ X and Y as parameters
+	mov	r1, r8
+	@@bl	getPixelColor
 	cmp	r0, r4
 	orreq	r10, #4				@ PowerUp1 collected
 	cmp	r0, r5
 	orreq	r10, #2				@ PowerUp2 collected
 	cmp	r0, r6
 	orreq	r10, #1				@ Ball collision
-	add	r0, #7				@ Increment X check pixel
-	cmp	r0, r3				@ Compare pixel with length
-	blt	Looping
+	sub	r8, #6				@ Increment Y check pixel	
+	cmp	r8, r9				@ Compare pixel with height
+	bge	LoopLeftSide	
 
-	pop	{r4-r7, lr}
+LoopTop:				@ Checks collisions with the top of the paddle
+	mov	r0, r7			@ (Every 6 pixels along the top)
+	mov	r1, r8				@ X and Y as parameters
+	@@bl	getPixelColor			@ Get the color at pixel (x, y)
+	cmp	r0, r4
+	orreq	r10, #4				@ PowerUp1 collected
+	cmp	r0, r5
+	orreq	r10, #2				@ PowerUp2 collected
+	cmp	r0, r6
+	orreq	r10, #1				@ Ball collision
+	add	r7, #7				@ Increment X check pixel
+	cmp	r7, r3				@ Compare pixel with length
+	blt	LoopTop
+
+	add	r8, r9, #15			@ Max Y for the loop
+LoopRightSide:				@ Check collisions with the right side
+	mov	r0, r3			@ (Top right pixel and 6 pixels down)
+	mov	r1, r9				@ Give x and y as parameters
+	@@bl	getPixelColor
+	cmp	r0, r4
+	orreq	r10, #4				@ PowerUp1 collected
+	cmp	r0, r5
+	orreq	r10, #2				@ Powerup2 collected
+	cmp	r0, r6
+	orreq	r10, #1				@ Ball collision
+	add	r9, #6				@ Increment Y offset
+	cmp	r7, r3				@ Compare pixel with length
+	blt	LoopRightSide
+
+	mov	r0, r10				@ Return collisions found
+
+	pop	{r4-r10, lr}
 	bx	lr
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 .global	PaddleUpdate
-PaddleUpdate:
+PaddleUpdate:				@ Updates the paddles new value
 	@ r0 = type of movement (0= right, 1= left, 2= FastRight, 3=FastLeft)
 	push	{r4-r6, lr}
 
+	ldr	r1, =paddle
+	ldr	r2, [r1]
 	cmp	r0, #0
-	moveq	r0, #3
+	addeq	r2, #3
 	cmp	r0, #1
-	moveq	r0, #-3
+	subeq	r2, #3
 	cmp	r0, #2
-	moveq	r0, #6
+	addeq	r2, #6
 	cmp	r0, #3
-	moveq	r0, #-6
-	
+	subeq	r2, #6
+	str	r2, [r1]
 
 	pop	{r4-r6, lr}
 	bx	lr
@@ -451,17 +500,15 @@ PaddleUpdate:
 .section .data
 
 .align
-.globl frameBufferInfo
-frameBufferInfo:
-	.int	0		@ frame buffer pointer
-	.int	0		@ screen width
-	.int	0		@ screen height
-
 .global	paddle			@ Coordinates of the paddle/ length
 paddle:
 	.int	360
 	.int	785
+
+.global	paddleDimen		@ Dimensions of the ball
+paddleDimen:
 	.int	80
+	.int	15
 
 .global	ballCoord
 ballCoord:
@@ -477,6 +524,11 @@ ballDimen:
 powerUp1:
 	.int	0		@ Coordinates of powerUp1
 	.int	0
+
+.global	powerUpDimen
+powerUpDimen:
+	.int	40
+	.int	25
 
 .global	powerUp2
 powerUp2:
