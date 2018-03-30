@@ -16,20 +16,24 @@
 
 @@SNES BUTTONS
 .equ	B,		0
-.equ	START,		3	
-.equ	UP,		4
-.equ	DOWN,		5
-.equ	LEFT,		6
-.equ	RIGHT,		7	
+.equ	START,		1
+.equ	UP,		2
+.equ	DOWN,		3
+.equ	LEFT,		4
+.equ	RIGHT,		6
 .equ	A,		8
-.equ	ARIGHT,		0xFE7F
-.equ	ALEFT,		0xFBFF
+.equ	ARIGHT,		7
+.equ	ALEFT,		5
 
 @@START STATE OF SOME VALUES
 .equ	STARTCURSOR,	1
 
-@STATES
+@@STATES
 .equ	MENU,		0
 .equ	PLAY,		1
 .equ	PAUSE,		2
 .equ	QUIT,		3
+
+@@PADDLESTUFF
+.equ	PADDLEMAX,	560
+.equ	PADDLEMIN,	160

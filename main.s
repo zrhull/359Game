@@ -8,10 +8,10 @@ main:
 	ldr 	r0, =frameBufferInfo 	@ frame buffer information structure
 	bl	initFbInfo
 	bl	initMenuScreen
-	@bl	setup
+	bl	Driver
 loop:
-	bl	find_Button
-	bl	update
+	bl	newButton
+break1:	bl	update
 	
 	b	loop
 	
