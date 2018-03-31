@@ -83,14 +83,26 @@ draw:
 bot:
 	add	r9, #25			@ Increment Y offset
 	mov	r12, #825
-	cmp	r9, r12		@ Max Y value
-	bge	bot2
+	cmp	r9, r12			@ Max Y value
+	bge	ScoreAndLives
 	b	yTileLoop
-bot2:
-	@ldr	r2, =PowerUp1
-	@mov	r0, #120
-	@mov	r1, #125
-	@bl	drawHardTile
+ScoreAndLives:
+	ldr	r0, =zero
+	ldr	r1, =numberSize
+	ldr	r2, =digitThree
+	bl	drawImage		@ Draw first zero
+	ldr	r0, =zero
+	ldr	r1, =numberSize
+	ldr	r2, =digitTwo
+	bl	drawImage		@ Draw second zero
+	ldr	r0, =zero
+	ldr	r1, =numberSize
+	ldr	r2, =digitOne
+	bl	drawImage		@ Draw third zero
+	ldr	r2, =livesPos
+	ldr	r1, =numberSize
+	ldr	r0, =three
+	bl	drawImage		@ Draw lives
 
 	pop	{r4-r11, lr}
 	bx	lr
@@ -479,18 +491,18 @@ LoopRightSide:				@ Check collisions with the right side
 
 .global	PaddleUpdate
 PaddleUpdate:				@ Updates the paddles new value
-	@ r0 = type of movement (0= right, 1= left, 2= FastRight, 3=FastLeft)
-	push	{r4-r6, lr}
+	@ r0 = Input type
+	push	{lr}
 
 	ldr	r1, =paddle
 	ldr	r2, [r1]
-	cmp	r0, #0
+	cmp	r0, #RIGHT
 	addeq	r2, #3
-	cmp	r0, #1
+	cmp	r0, #LEFT
 	subeq	r2, #3
-	cmp	r0, #2
+	cmp	r0, #ARIGHT
 	addeq	r2, #6
-	cmp	r0, #3
+	cmp	r0, #ALEFT
 	subeq	r2, #6
 	cmp	r2, #PADDLEMIN
 	ble	pDone
@@ -498,34 +510,107 @@ PaddleUpdate:				@ Updates the paddles new value
 	bge	pDone
 	str	r2, [r1]
 pDone:
-	pop	{r4-r6, lr}
+	pop	{lr}
 	bx	lr
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
 .global powerUpdate
-powerUpdate:
-	push	{r4, lr}
-	ldr	r0, =powerUp1	
-	ldr	r4, [r0, #8]
-	cmp	r4, #1
+powerUpdate:			@ Update location of powerUp if either is in
+	push	{r4, lr}	@ the moving state (state: 0 = waiting, 1 = moving,
+	ldr	r0, =powerUp1	@ and 2 = dead)
+	ldr	r3, [r0, #8]
+	cmp	r3, #1
 	bne	nextPower
-	
+
 	ldr	r1, [r0, #4]
 	add	r1, #2
-	str	r1, [r0, #4]
+	mov	r2, #802
+	cmp	r1, r2			@ If at the bottom of the game powerup
+	movge	r1, #2			@ will die
+	strge	r1, [r0, #8]
+	strlt	r1, [r0, #4]		@ Else increment y offset by 2
 	
 nextPower:
 	ldr	r0, =powerUp2
-	ldr	r4, [r0, #8]
-	cmp	r4, #1
+	ldr	r3, [r0, #8]
+	cmp	r3, #1
 	bne	powerDone
 	ldr	r1, [r0, #4]
 	add	r1, #2
-	str	r1, [r0, #4]
+	cmp	r1, r2
+	movge	r1, #2
+	strge	r1, [r0, #8]
+	strlt	r1, [r0, #4]
 
 powerDone:
 	pop	{r4, lr}
 	bx	lr
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+.global setPowerUp
+setPowerUp:				@ Pick random numbers between x (160 - 640)
+	@ r0 = powerUp coord location	@ and y (225 - 375)
+	push	{r4-r6, lr}
+	mov	r7, r0			@ save memory location
+
+	mov	r1, #160
+	mov	r2, #640
+	mov	r3, #225
+	mov	r4, #375
+
+	bl	rand			@ rand() % (max + 1 - Min) + min
+	add	r5, r2, #1		@ to get a # from a range
+	sub	r5, r1			@@@@ Might not work @@@@
+	sdiv	r6, r0, r5		
+	mul	r6, r5
+	sub	r0, r6	
+	add	r0, r1			@ r0 = the random number
+	str	r0, [r7], #4
+
+	bl	rand			@ rand() % (max + 1 - Min) + min
+	add	r5, r2, #1		@ to get a # from a range
+	sub	r5, r1			@@@@ Might not work @@@@
+	sdiv	r6, r0, r5		
+	mul	r6, r5
+	sub	r0, r6			@ r0 = the random number
+	add	r0, r1
+	str	r0, [r7]
+
+	pop	{r4-r6, lr}
+	bx	lr
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+.global drawScore
+drawScore:
+	push	{r4, lr}
+
+	ldr	r0, =map
+	add	r0, #228		@ First position in the map (May be wrong)
+	mov	r1, #0			@ # of points left counter
+	mov	r2, #0			@ X loop counter
+loopCount:
+	ldr	r3, [r0], #4		@ load value and post increment
+	add	r1, r1, r3		@ Total points left on board
+	add	r2, #1			@ increment counter
+	cmp	r2, #12			@ Get all 12 numbers in a row
+	beq	loopCount
+	add	r0, #8			@ Add 8 to the offset to skip 2 #'rs in the map
+	mov	r2, #0			@ Reset X loop counter
+	cmp	r0, #556		@ Last element to add
+	ble	loopCount
+	sub	r4, r1			@ r4 = score, /# of times bricks have been hit
+
+	@@ Need to do score to printing numbers @@
+	@@ Positions of all digits are in data section below @@
+	@@ Also need to update lives @@
+	@@ I put a section in setup at the top of this class that draws initail score and lives @@
+
+	pop	{r4, lr}
+	bx	lr
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 @ Data section
 .section .data
@@ -567,6 +652,26 @@ powerUp2:
 	.int	0		@ Coordinates of powerUp2
 	.int	0
 	.int	0		@ State of powerup
+
+.global	digitOne		@ Position of first digit
+digitOne:
+	.int	350
+	.int	82
+
+.global	digitTwo		@ Position of second digit
+digitTwo:
+	.int	388
+	.int	82
+
+.global	digitThree		@ Position third digit
+digitThree:
+	.int	426
+	.int	82
+
+.global livesPos		@ Position of lives
+livesPos:
+	.int	640
+	.int	82
 
 magenta:			@ Transparent color
 	.int	0xFFF05EF0
