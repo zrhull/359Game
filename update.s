@@ -47,68 +47,61 @@ updateMenu:
 
 updateGame:
 break3:
+@@@@@@@@@@@@ Collisions @@@@@@@@@@@@@@
+
+
 	@@ collision somewhere	
 
-	@@ erase ball
-	ldr	r0, =ballCoord
+
+@@@@@@@@@@@@ Erase ball, paddle, and powerUps @@@@@@@@@@@@@@
+
+	ldr	r0, =ballCoord		@ Erase ball
 	ldr	r1, =ballDimen
 	bl	DrawBackground
-	
-	@@ Update Ball COORD NEED@@@
 
-	@@ draw new ball
-	@bl	drawBall
-	
-	@@@@@@@@@@@@@@@@@@@@@@@@@@@
-	ldr	r0, =powerUp1
+	ldr	r0, =powerUp1		@ Erase PowerUp1
 	ldr	r1, =powerUpDimen
 	bl	DrawBackground
 
-	bl	powerUpdate
+	ldr	r0, =powerUp2		@ Erase PowerUp2
+	ldr	r1, =powerUpDimen
+	bl	DrawBackground
 
-
-
-	@@@@@@@@@@@@@@@@@@@@@@@@@@@
-	
-
-
-	@@ erase paddle
-	ldr	r0, =paddle
+	ldr	r0, =paddle		@ Erase Paddle
 	ldr	r1, =paddleDimen
 	bl	DrawBackground
 
-	@@ Check input
-	@@ if left move left 
-	@@ if right move rigt
-	@@ 0 right, 1 left, 2 rightfast, 3leftfast
+@@@@@@@@@@ Update paddle, ball, and powerUp locations @@@@@@
 
-	
-	cmp	r10, #RIGHT
-	moveq	r0, #0
-	@addeq	r2, #3
-	cmp	r10, #LEFT
-	moveq	r0, #1
-	@subeq	r2, #3
-	cmp	r10, #ARIGHT
-	moveq	r0, #2
-	@addeq	r2, #6
-	cmp	r10, #ALEFT
-	@subeq	r2, #6
-	moveq	r0, #3
-	@str	r2, [r1]
+	@@ Update Ball COORD NEED@@@
+
+	bl	powerUpdate		@ Update PowerUp locations
+
+	mov	r0, r10			@ Update Paddle location
 	bl	PaddleUpdate
+
+@@@@@@@@@@@ Draw paddle, ball, and powerUps @@@@@@@@@@@@@@@@
+
 	ldr	r0, =Paddle
 	bl	drawPadle
 	
-	ldr	r0, =powerUp1
-	ldr	r2, =PowerUp1
-	ldr	r1, [r0, #4]
-	ldr	r0, [r0]
-	bl	drawHardTile	
+	ldr	r0, =powerUp1		@ Location of powerup coords
+	ldr	r2, =PowerUp1		@ Location of powerUp Picture
+	ldr	r3, [r0, #8]		@ Get powerUp state
+	cmp	r3, #1
+	ldreq	r1, [r0, #4]		@ Load Y coord
+	ldreq	r0, [r0]		@ Load X coord
+	bleq	drawHardTile	
 	
-	bl	drawBall
+	ldr	r0, =powerUp2		@ Location of powerup coords
+	ldr	r2, =PowerUp2		@ Location of powerUp Picture
+	ldr	r3, [r0, #8]		@ Get powerUp state
+	cmp	r3, #1
+	ldreq	r1, [r0, #4]		@ Load Y coord
+	ldreq	r0, [r0]		@ Load X coord
+	bleq	drawHardTile
 
-	@@ draw new paddle
+	bl	drawBall
 	
 
 
@@ -117,6 +110,7 @@ updatePause:
 
 
 updateQuit:
+
 
 updateReturn:
 	mov	r0, #30000
@@ -151,16 +145,12 @@ playINIT:
 	bl	drawPadle
 	bl	drawBall
 
-	@@JUST FOR TESTING@@@POWERUP
-	ldr	r2, =powerUp1
-	mov	r1, #250
-	mov	r0, #240
-	str	r0, [r2]
-	str	r1, [r2, #4]
-	mov	r0, #240
-	ldr	r2, =PowerUp1
-	bl	drawHardTile	
-	
+	ldr	r0, =powerUp1		@@Set PowerUp Locations	
+	bl	setPowerUp
+
+	ldr	r0, =powerUp2
+	bl	setPowerUp	
+
 break4:
 stateDone:
 	ldr	r0, =gameState
