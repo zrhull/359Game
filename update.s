@@ -145,6 +145,13 @@ playINIT:
 	bl	drawPadle
 	bl	drawBall
 
+	ldr	r0, =ScoreBoard		@Draw scoreboard
+	ldr	r1, =ScoreboardDimen
+	ldr	r2, =ScoreboardCoord
+	bl	drawImage
+	
+	@@@@ Draw score / lives @@@@
+
 	ldr	r0, =powerUp1		@@Set PowerUp Locations	
 	bl	setPowerUp
 
