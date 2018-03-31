@@ -672,6 +672,11 @@ digitThree:
 livesPos:
 	.int	640
 	.int	82
+	
+.global	numberSize		@ Size of all number pictures
+numberSize:
+	.int	39
+	.int	50
 
 magenta:			@ Transparent color
 	.int	0xFFF05EF0
