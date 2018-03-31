@@ -2,9 +2,10 @@
 
 @ Code section
 .section .text
-
+.include "constants.s"
 .global setup
 setup:
+	push	{r4-r11, lr}
 	@ ask for frame buffer information
 	ldr 		r0, =frameBufferInfo 	@ frame buffer information structure
 	bl		initFbInfo
@@ -86,14 +87,9 @@ bot:
 	bge	bot2
 	b	yTileLoop
 bot2:
-	ldr	r2, =PowerUp1
-	mov	r0, #120
-	mov	r1, #125
-	bl	drawHardTile
 
-	@ stop
-	haltLoop$:
-		b	haltLoop$
+	pop	{r4-r11, lr}
+	bx	lr
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
@@ -373,20 +369,23 @@ XLoopReDrawBack:
 	mul	r10, r1				@ The offset of the element in the map
 	ldr	r10, [r9, r10]			@ Load value of map position
 	
-	cmp	r10, #10			@ Determin the tile to be drawn
+breakT:	cmp	r10, #10			@ Determin the tile to be drawn
 	ldreq	r2, =background
 	cmp	r10, #3
 	ldreq	r2, =red
+	ldreq	r2, [r2]
 	cmp	r10, #2
 	ldreq	r2, =orange
+	ldreq	r2, [r2]
 	cmp	r10, #1
 	ldreq	r2, =yellow
+	ldreq	r2, [r2]
 
 	mov	r1, r6				@ Y offset for a parameter
 	mov	r0, r12
 	cmp	r7, r8				@ Compare X loop counter to # of bricks to draw
 	bge	doneXLoopBack
-	cmp	r6, #640			@ Dont Draw over the boarder
+	cmp	r12, #640			@ Dont Draw over the boarder
 	bge	doneXLoopBack
 
 	cmp	r10, #4				@ Compare the value in the map
@@ -398,7 +397,7 @@ XLoopReDrawBack:
 doneXLoopBack:
 	add	r6, #25				@ Increment Y offset
 	cmp	r6, r3				@ Compare number of bricks to draw down
-	bgt	YLoopReDrawBack
+	ble	YLoopReDrawBack
 stopDrawing:
 
 
@@ -476,25 +475,96 @@ LoopRightSide:				@ Check collisions with the right side
 
 .global	PaddleUpdate
 PaddleUpdate:				@ Updates the paddles new value
-	@ r0 = type of movement (0= right, 1= left, 2= FastRight, 3=FastLeft)
-	push	{r4-r6, lr}
+	@ r0 = Input type
+	push	{lr}
 
 	ldr	r1, =paddle
 	ldr	r2, [r1]
-	cmp	r0, #0
+	cmp	r0, #RIGHT
 	addeq	r2, #3
-	cmp	r0, #1
+	cmp	r0, #LEFT
 	subeq	r2, #3
-	cmp	r0, #2
+	cmp	r0, #ARIGHT
 	addeq	r2, #6
-	cmp	r0, #3
+	cmp	r0, #ALEFT
 	subeq	r2, #6
+	cmp	r2, #PADDLEMIN
+	ble	pDone
+	cmp	r2, #PADDLEMAX
+	bge	pDone
 	str	r2, [r1]
+pDone:
+	pop	{lr}
+	bx	lr
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+.global powerUpdate
+powerUpdate:			@ Update location of powerUp if either is in
+	push	{r4, lr}	@ the moving state (state: 0 = waiting, 1 = moving,
+	ldr	r0, =powerUp1	@ and 2 = dead)
+	ldr	r3, [r0, #8]
+	cmp	r3, #1
+	bne	nextPower
+
+	ldr	r1, [r0, #4]
+	add	r1, #2
+	mov	r2, #802
+	cmp	r1, r2			@ If at the bottom of the game powerup
+	movge	r1, #2			@ will die
+	strge	r1, [r0, #8]
+	strlt	r1, [r0, #4]		@ Else increment y offset by 2
+	
+nextPower:
+	ldr	r0, =powerUp2
+	ldr	r3, [r0, #8]
+	cmp	r3, #1
+	bne	powerDone
+	ldr	r1, [r0, #4]
+	add	r1, #2
+	cmp	r1, r2
+	movge	r1, #2
+	strge	r1, [r0, #8]
+	strlt	r1, [r0, #4]
+
+powerDone:
+	pop	{r4, lr}
+	bx	lr
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+.global setPowerUp
+setPowerUp:				@ Pick random numbers between x (160 - 640)
+	@ r0 = powerUp coord location	@ and y (225 - 375)
+	push	{r4-r6, lr}
+	mov	r7, r0			@ save memory location
+
+	mov	r1, #160
+	mov	r2, #640
+	mov	r3, #225
+	mov	r4, #375
+
+	bl	rand			@ rand() % (max + 1 - Min) + min
+	add	r5, r2, #1		@ to get a # from a range
+	sub	r5, r1			@@@@ Might not work @@@@
+	div	r6, r0, r5		
+	mul	r6, r5
+	sub	r0, r6	
+	add	r0, r1			@ r0 = the random number
+	str	r0, [r7], #4
+
+	bl	rand			@ rand() % (max + 1 - Min) + min
+	add	r5, r2, #1		@ to get a # from a range
+	sub	r5, r1			@@@@ Might not work @@@@
+	div	r6, r0, r5		
+	mul	r6, r5
+	sub	r0, r6			@ r0 = the random number
+	add	r0, r1
+	str	r0, [r7]
 
 	pop	{r4-r6, lr}
 	bx	lr
 
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 @ Data section
 .section .data
@@ -524,6 +594,7 @@ ballDimen:
 powerUp1:
 	.int	0		@ Coordinates of powerUp1
 	.int	0
+	.int	0		@ State of powerup
 
 .global	powerUpDimen
 powerUpDimen:
@@ -534,6 +605,7 @@ powerUpDimen:
 powerUp2:
 	.int	0		@ Coordinates of powerUp2
 	.int	0
+	.int	0		@ State of powerup
 
 magenta:			@ Transparent color
 	.int	0xFFF05EF0
@@ -548,10 +620,10 @@ yellow:
 	.int	0xFFFFEE00
 
 powerUp1Color:
-	.int	0x0
+	.int	0xFF15E620
 
 powerUp2Color:
-	.int	0x0
+	.int	0xFFa910eb
 
 ballColor:
 	.int	0xFF99D9Ea
@@ -587,6 +659,5 @@ map:
 	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
 	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
 	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
-
 
 
