@@ -69,11 +69,11 @@ drawCursor:
 	
 	@mov	r5, #32			@@ Width
 	@mov	r6, #32			@@ Height
-	mov	r7, #300		@@ X, CHANGE VALUES LATER
+	mov	r7, #270		@@ X, CHANGE VALUES LATER
 	@ldr	r9,=gameState
 	@ldr	r9, [r9, #CURSORLOC]
 	@cmp	r9, #0			
-	mov	r8, #400		@@ Y HEIGHT FOR START
+	mov	r8, #475		@@ Y HEIGHT FOR START
 	@movne	r8, #450		@@ Y HEIGHT FOR QUIT
 
 	ldr	r0, =cursor
@@ -93,10 +93,10 @@ updateCursor:
 	@@@ First erase old cursor@@@
 	ldr	r9,=gameState
 	ldr	r9, [r9, #CURSORLOC]
-	mov	r7, #300		@@ X, CHANGE VALUES LATER
+	mov	r7, #270		@@ X, CHANGE VALUES LATER
 	cmp	r9, #PLAY			
-	movne	r8, #400		@@ Y HEIGHT FOR START
-	moveq	r8, #450		@@ Y HEIGHT FOR QUIT
+	movne	r8, #475		@@ Y HEIGHT FOR START
+	moveq	r8, #535		@@ Y HEIGHT FOR QUIT
 	
 	ldr	r0, =blackTile
 	ldr	r1, =blackTileWH
@@ -108,10 +108,10 @@ updateCursor:
 	@ldr	r9,=gameState
 	@ldr	r9, [r9, #CURSORLOC]
 
-	mov	r7, #300		@@ X, CHANGE VALUES LATER
+	mov	r7, #270		@@ X, CHANGE VALUES LATER
 	cmp	r9, #PLAY		
-	moveq	r8, #400		@@ Y HEIGHT FOR START
-	movne	r8, #450		@@ Y HEIGHT FOR QUIT
+	moveq	r8, #475		@@ Y HEIGHT FOR START
+	movne	r8, #535		@@ Y HEIGHT FOR QUIT
 
 	ldr	r0, =cursor
 	ldr	r1, =cursorWH
