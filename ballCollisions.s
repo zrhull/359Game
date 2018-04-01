@@ -1,6 +1,7 @@
 
 
 @new sub
+.global ballPositionUpdate
 ballPositionUpdate:
 	push	{r4-r9, lr}	
 
@@ -11,8 +12,6 @@ ballPositionUpdate:
 	ldr	r5, =vertDirection
 	ldr	r8, [r5]		@r8 = 1
 
-	if r8 == 1 and r7 == 1
-
 	cmp	r8, #1
 	bne	upLeft
 	cmp	r7, #1
@@ -20,7 +19,7 @@ ballPositionUpdate:
 
 	ldr	r0, =TR
 
-	bl	checkCollisions
+	bl	checkCollisions 
 
 	ldr	r5, =horizDirection
 	ldr	r4, [r5]
@@ -296,15 +295,15 @@ ceilingBegin:
 	ldr r1, [r2]
 	b   ceilingTest
 
-angleChange
+angleChange:
 	add r12, r5, #1
 	mov r1, #45
 
 ceilingTest:
 	cmp	r12, #144	
-	bge angleTest	
+	bge ceilingAngleTest	
 
-angleTest:
+ceilingAngleTest:
 	cmp	r1, #60
 	beq angleChange
 	b   ceilingBody
@@ -350,6 +349,27 @@ endCheckCollisions:
 
 	pop {r4-r12, pc}
 
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@ new sub
+getPixelColour:
+	@r0 = x
+	@r1 = y
+	@r4 = offset
+	@return colour
+
+	push		{r4-r6, lr}
+	
+	ldr		r5, =frameBufferInfo	@load frame buffer info address into r5
+	ldr		r3, [r5, #4]		@load frame width into r3
+	mul		r1, r3
+	add		r4, r0, r1
+
+	lsl		r4, #2
+
+	ldr		r6, [r5]
+	ldr		r0, [r6, r4]
+
+	pop		{r4, r5, r6, pc}
 
 
 	.section	.data
