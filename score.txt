@@ -1,0 +1,17 @@
+.include "gameStruct.s"
+.section .text
+drawScore:
+@@@@@@@@@@@@
+@@	Maybe each number should be a tile, that way can easily erase by
+@@	just drawing a black tile over the number and drawing new number
+@@
+incScore:
+	ldr	r4, =gameState
+	ldr	r5, [r4, #GAMESCORE]
+	mov	r6, #0			@@ placement of score, 0 is far right
+loop:
+	cmp	r5, #9
+	subhi	r5, #10
+	addhi	r6, #1
+
+	

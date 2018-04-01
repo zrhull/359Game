@@ -7,20 +7,19 @@ main:
 	@ ask for frame buffer information
 	ldr 	r0, =frameBufferInfo 	@ frame buffer information structure
 	bl	initFbInfo
+	
+breakTest:
 	bl	initMenuScreen
+	@bl	setup
 	bl	Driver
 loop:
 	bl	newButton
-break1:	bl	update
+	bl	update
 	
 	b	loop
-	
-	mov	r4, r0
-	mov	r0, #0
-	cmp	r4, #0
-	
-	@ stop
-	haltLoop$:
+
+@ stop
+haltLoop$:
 
 
 @ Data section

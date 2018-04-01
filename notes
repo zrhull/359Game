@@ -1,0 +1,10 @@
+If ball will collide with wall, dont draw, instead calc next step and draw that
+
+Segfault will occur if set up gpio too many times (maybe initialize it once)
+
+tile must be 32x32
+use a combination of the tiles to make bricks
+ball shouldnt be too hard to track with eyes on screen
+
+for controller have a global function to initialize SNES
+		a get button so we can get the input of the controller

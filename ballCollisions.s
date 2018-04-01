@@ -1,9 +1,9 @@
-
+.section .text
 
 @new sub
 .global ballPositionUpdate
 ballPositionUpdate:
-	push	{r4-r9, lr}	
+	push	{r4-r11, lr}	
 
 	ldr	r5, =angle
 	ldr	r6, [r5]		@r6 = 45
@@ -24,12 +24,12 @@ ballPositionUpdate:
 	ldr	r5, =horizDirection
 	ldr	r4, [r5]
 	cmp	r4, r7
-	bne	finish
+	@bne	finish
 
 	ldr	r5, =vertDirection
 	ldr	r4, [r5]
 	cmp	r4, r8
-	bne	finish
+	@bne	finish
 
 	ldr	r0, =TL
 
@@ -38,13 +38,13 @@ ballPositionUpdate:
 	ldr	r5, =vertDirection
 	ldr	r4, [r5]
 	cmp	r4, r8
-	bne	finish
+	@bne	finish
 
 	ldr	r0, =BR
 
 	bl	checkCollisions
 
-	b	finish
+	@b	finish
 
 upLeft:	
 	cmp	r8, #1
@@ -59,12 +59,12 @@ upLeft:
 	ldr	r5, =horizDirection
 	ldr	r4, [r5]
 	cmp	r4, r7
-	bne	finish
+	@bne	finish
 
 	ldr	r5, =vertDirection
 	ldr	r4, [r5]
 	cmp	r4, r8
-	bne	finish
+	@bne	finish
 
 	ldr	r0, =TR
 
@@ -73,13 +73,13 @@ upLeft:
 	ldr	r5, =vertDirection
 	ldr	r4, [r5]
 	cmp	r4, r8
-	bne	finish
+	@bne	finish
 
 	ldr	r0, =BL
 
 	bl	checkCollisions
 
-	b	finish
+	@b	finish
 
 downRight:	
 	cmp	r8, #0
@@ -99,7 +99,7 @@ downRight:
 	ldr	r5, =vertDirection
 	ldr	r4, [r5]
 	cmp	r4, r8
-	bne	finish
+	@bne	finish
 
 	ldr	r0, =BL
 
@@ -108,13 +108,13 @@ downRight:
 	ldr	r5, =vertDirection
 	ldr	r4, [r5]
 	cmp	r4, r8
-	bne	finish
+	@bne	finish
 
 	ldr	r0, =TR
 
 	bl	checkCollisions
 
-	b	finish
+	@b	finish
 
 downLeft:
 	ldr	r0, =BL
@@ -124,12 +124,12 @@ downLeft:
 	ldr	r5, =horizDirection
 	ldr	r4, [r5]
 	cmp	r4, r7
-	bne	finish
+	@bne	finish
 
 	ldr	r5, =vertDirection
 	ldr	r4, [r5]
 	cmp	r4, r8
-	bne	finish
+	@bne	finish
 
 	ldr	r0, =BR
 
@@ -138,20 +138,21 @@ downLeft:
 	ldr	r5, =vertDirection
 	ldr	r4, [r5]
 	cmp	r4, r8
-	bne	finish
+	@bne	finish
 
 	ldr	r0, =TL
 
 	bl	checkCollisions
 
-	b	finish
+	@b	finish
 
 finish:
 	ldr	r9, =ballCoord
 	str	r0, [r9]
 	str	r1, [r9, #4]
 
-	pop	{r4-r9, pc}	
+	pop	{r4-r11, lr}
+	bx	lr	
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
@@ -171,7 +172,9 @@ checkCollisions:
 	@r12 = nextPixelY
 	@returns temporary registers holding the x and y of the upper left pixel of the ball image r0, r1
 
-	mov r10, r0
+	push	{r4-r12, lr}
+
+	mov 	r10, r0
 	ldr	r4, [r10]		@ current x
 	ldr	r5, [r10, #4]		@ current y
 
@@ -206,9 +209,9 @@ angleTest:
 	cmp	r9, #1			@check the vertical direction of ball travelling at 45 degrees
 	bne	down45			@if vertical direction is 1 (up) proceed
 
-	add	r12, r5, #1		@increment y coordinate of the testing pixel by 1
-	add	r7, r7, #1		@increment the temporary ball y coordinate by 1
-	b	angle60			
+	sub	r12, r5, #1		@increment y coordinate of the testing pixel by 1
+	sub	r7, r7, #1		@increment the temporary ball y coordinate by 1
+	b	wallTest			
 
 down45:
 	sub	r12, r5, #1		@decrement y coordinate of the testing pixel by 1
@@ -257,8 +260,8 @@ wallBody:
 	ldr	r2, =horizDirection
 	str r8, [r2]
 
-	cmp	r12, #144		
-	blt	checkBrick
+	cmp	r12, #149		
+	bgt	checkBrick
 	
 innerBody:
 	mov	r11, r4
@@ -300,8 +303,9 @@ angleChange:
 	mov r1, #45
 
 ceilingTest:
-	cmp	r12, #144	
-	bge ceilingAngleTest	
+	cmp	r12, #149	
+	@ble ceilingAngleTest	
+	bgt	checkBrick	
 
 ceilingAngleTest:
 	cmp	r1, #60
@@ -330,12 +334,12 @@ checkBrick:
 
 ceilingBody:
 	ldr	r2, [r10, #12]		@load the testing pixel previous y coordinate
-	mov	r12, r2			@next y coordinate of testing pixel is set to its previous coordinate
+					@next y coordinate of testing pixel is set to its previous coordinate
 
-	ldr	r2, [r10, #8]		@load the testing pixel previous x coordinate
-	sub	r2, r4, r2		@current testing pixel x - previous x
+	@ldr	r2, [r10, #8]		@load the testing pixel previous x coordinate
+	sub	r2, r5, r2		@current testing pixel y - previous y
 	add	r12, r5, r2		@testing pixel next y = current y + (current y - prev y) (flipped over the x-axis)
-
+bre:
 	eor	r9, #1
 	ldr	r2, =vertDirection
 	str r9, [r2]	
@@ -343,7 +347,8 @@ ceilingBody:
 endCheckCollisions:
 	str r4, [r10, #8]
 	str r5, [r10, #12]
-
+	str r11, [r10]
+	str r12, [r10,#4]	
 	mov r0, r11
 	mov r1, r12
 
@@ -351,6 +356,7 @@ endCheckCollisions:
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @ new sub
+.global getPixelColour
 getPixelColour:
 	@r0 = x
 	@r1 = y
@@ -372,8 +378,10 @@ getPixelColour:
 	pop		{r4, r5, r6, pc}
 
 
-	.section	.data
 
+.section	.data
+
+.global ballDimen
 ballDimen:
 		.int		8
 		.int		8
@@ -381,10 +389,10 @@ ballDimen:
 prevBallCoord:
 		.int		0
 		.int		0
-
+.global ballCoord
 ballCoord:
-		.int		392
-		.int		788
+		.int		396
+		.int		777
 
 angle:		.int		45
 
@@ -393,25 +401,25 @@ horizDirection:	.int		0x1
 vertDirection:	.int		0x1
 
 TL:		
-		.int		392
-		.int		788
+		.int		396
+		.int		777
 		.int		0
 		.int		0
 
 TR:		
-		.int		399
-		.int		788
+		.int		403
+		.int		777
 		.int		0
 		.int		0
 
 BL:		
-		.int		392
-		.int		781
+		.int		396
+		.int		784
 		.int		0
 		.int		0
 
 BR:		
-		.int		399
-		.int		781
+		.int		403
+		.int		784
 		.int		0
 		.int		0

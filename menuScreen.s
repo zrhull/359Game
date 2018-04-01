@@ -34,37 +34,9 @@ initMenuScreen:
 	bl	drawImage		@@r0= address for img, r1 = address for WH
 					@@ r2 = address for xy
 
-	@drawImg
-	@bl	drawImage
-	b	drawCursor
-@@@@@@@@@@ LOGO	@@@@@@@@@@@@@@@@@@@@			
-drawLogo:
-	mov	r5, #548
-	mov	r6, #175
-	mov	r7, #140
-	mov	r8, #130
 	
-	@Set address
-	ldr	r0, =logo		@@GET THIS
-	
-	@Set w and h
-	@ldr	r1, =imgWH		@@ width and height
-	@str	r5, [r1]		@@ width = r5
-	@str	r6, [r1, #4]		@@ height = r6
-	
-	@Set x and y
-	ldr	r2, =xy
-	str	r7, [r2]
-	str	r8, [r2,#4]
-	
-	@drawImg
-	bl	drawImage		@@r0= address for img, r1 = address for WH
-					@@ r2 = address for xy
 
-	ldr	r9,=gameState
-	ldr	r9, [r9, #CURSORLOC]
-	@mov	r9, #0			@@ r9 is location of cursor
-					@@ 0 is start 1 is quit
+
 drawCursor:
 	
 	@mov	r5, #32			@@ Width
@@ -128,6 +100,6 @@ return:
 @ Data Section
 .section .data
 
-
+imgWH:	.int 0,0
 xy:
 	.int 0,0

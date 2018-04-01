@@ -48,14 +48,20 @@ newButton:
 
 	tst	r9, #(1<<15)			@ 12 individual bit testers to see if
  	orreq	r8, #128
- 	moveq	r0, #0
+ 	moveq	r0, #0				@ test for B
 	beq	done
 	
  	
 Yc:
- 	tst	r9, #(1<<14)			@ test for Y	
+ 	tst	r9, #(1<<14)			@ test for Y
+ 	
+ 	
+ 	
 Slc:
  	tst	r9, #(1<<13)			@ test for Sl
+
+ 	
+ 	
 Stc:
  	tst	r9, #(1<<12)			@ test for St
 	orreq	r8, #64
@@ -100,10 +106,18 @@ Ac:
 	beq	done
 Xc:
  	tst	r9, #(1<<6)			@ test for X
+ 	
+ 	
 Lc:
  	tst	r9, #(1<<5)			@ test for left bumper
+ 	
+ 	
+ 	
 Rc:
 	tst	r9, #(1<<4)			@ test for right bumper
+ 	
+
+	
 done:
 	@mov	r0, r8
 	pop	{r4-r9, lr}

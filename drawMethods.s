@@ -7,8 +7,8 @@
 setup:
 	push	{r4-r11, lr}
 	@ ask for frame buffer information
-	ldr 		r0, =frameBufferInfo 	@ frame buffer information structure
-	bl		initFbInfo
+	@ldr 		r0, =frameBufferInfo 	@ frame buffer information structure
+	@bl		initFbInfo
 
 	mov	r5, #125		@ Start of game boarder for Y
 	mov	r7, #0			@ Y loop counter
@@ -167,7 +167,7 @@ checkSize:
 @  r2 - colour
 
 DrawPixel:
-	push	{r1, r3-r6}
+	push	{r1, r3-r6, lr}
 	offset	.req	r4
 	ldr	r5, =frameBufferInfo
 	ldr	r6, =magenta		@ Invalid constant error here
@@ -186,11 +186,20 @@ DrawPixel:
 	ldr	r1, [r5]		@ r0 = frame buffer pointer
 	str	r2, [r1, offset]
 dontDraw:
-	pop	{r1, r3-r6}
+	pop	{r1, r3-r6, lr}
 	bx	lr
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
+.global drawPaddle
+drawPaddle:
+	push	{lr}
+	ldr	r0, =Paddle
+	ldr	r1, =PaddleWH
+	ldr	r2, =paddleState
+	bl	drawImage
+	pop	{lr}
+	bx	lr
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 .global	drawPadle
 drawPadle:				@ This function is used to draw/ update the paddle
 	@ r0 = paddle image
@@ -333,14 +342,14 @@ doneY:
 
 .global	drawBall
 drawBall:
-	push	{r4, lr}
+	push	{r4-r10,lr}
 
 	ldr	r0, =ball
 	ldr	r1, =ballDimen
 	ldr	r2, =ballCoord
 	bl	drawImage
 
-	pop	{r4, lr}
+	pop	{r4-r10, lr}
 	bx	lr
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -363,7 +372,7 @@ DrawBackground:				@ given object
 	mul	r6, r11				@ Y offset of background
 
 	sdiv	r8, r2, r4
-	add	r8, #1				@ Get number of background bricks in length
+	add	r8, #2				@ Get number of background bricks in length
 	sdiv	r3, r11
 	add	r3, #1				@ Get # of background bricks in height
 	mul	r3, r11
@@ -422,164 +431,8 @@ stopDrawing:
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-.global	PaddleCollision
-PaddleCollision:			@ Collisions with the paddle, checks both sides and the top
-	push	{r4-r10, lr}
 
-	ldr	r0, =paddle
-	ldr	r1, [r0]			@ X origin of paddle (Top left x  check pixel)
-	ldr	r2, [r0, #4]
-	ldr	r3, [r0, #8]			@ Length of paddle
-	ldr	r4, =powerUp1Color		@@@@@@@ Have not put the powerup colors into memory yet
-	ldr	r5, =powerUp2Color
-	ldr	r6, =ballColor
-	sub	r2, #2
-	
-	add	r3, r3, r1
-	mov	r9, r2				@ save Y
-	mov	r7, r1				@ save X
-	add	r8, r2, #15			@ set Y min
-LoopLeftSide:				@ Check left side of paddle (Bottom/ 6 up/ 12 up)
-	mov	r0, r7				@ X and Y as parameters
-	mov	r1, r8
-	@@bl	getPixelColor
-	cmp	r0, r4
-	orreq	r10, #4				@ PowerUp1 collected
-	cmp	r0, r5
-	orreq	r10, #2				@ PowerUp2 collected
-	cmp	r0, r6
-	orreq	r10, #1				@ Ball collision
-	sub	r8, #6				@ Increment Y check pixel	
-	cmp	r8, r9				@ Compare pixel with height
-	bge	LoopLeftSide	
-
-LoopTop:				@ Checks collisions with the top of the paddle
-	mov	r0, r7			@ (Every 6 pixels along the top)
-	mov	r1, r8				@ X and Y as parameters
-	@@bl	getPixelColor			@ Get the color at pixel (x, y)
-	cmp	r0, r4
-	orreq	r10, #4				@ PowerUp1 collected
-	cmp	r0, r5
-	orreq	r10, #2				@ PowerUp2 collected
-	cmp	r0, r6
-	orreq	r10, #1				@ Ball collision
-	add	r7, #7				@ Increment X check pixel
-	cmp	r7, r3				@ Compare pixel with length
-	blt	LoopTop
-
-	add	r8, r9, #15			@ Max Y for the loop
-LoopRightSide:				@ Check collisions with the right side
-	mov	r0, r3			@ (Top right pixel and 6 pixels down)
-	mov	r1, r9				@ Give x and y as parameters
-	@@bl	getPixelColor
-	cmp	r0, r4
-	orreq	r10, #4				@ PowerUp1 collected
-	cmp	r0, r5
-	orreq	r10, #2				@ Powerup2 collected
-	cmp	r0, r6
-	orreq	r10, #1				@ Ball collision
-	add	r9, #6				@ Increment Y offset
-	cmp	r7, r3				@ Compare pixel with length
-	blt	LoopRightSide
-
-	mov	r0, r10				@ Return collisions found
-
-	pop	{r4-r10, lr}
-	bx	lr
-
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-.global	PaddleUpdate
-PaddleUpdate:				@ Updates the paddles new value
-	@ r0 = Input type
-	push	{lr}
-
-	ldr	r1, =paddle
-	ldr	r2, [r1]
-	cmp	r0, #RIGHT
-	addeq	r2, #3
-	cmp	r0, #LEFT
-	subeq	r2, #3
-	cmp	r0, #ARIGHT
-	addeq	r2, #6
-	cmp	r0, #ALEFT
-	subeq	r2, #6
-	cmp	r2, #PADDLEMIN
-	ble	pDone
-	cmp	r2, #PADDLEMAX
-	bge	pDone
-	str	r2, [r1]
-pDone:
-	pop	{lr}
-	bx	lr
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-.global powerUpdate
-powerUpdate:			@ Update location of powerUp if either is in
-	push	{r4, lr}	@ the moving state (state: 0 = waiting, 1 = moving,
-	ldr	r0, =powerUp1	@ and 2 = dead)
-	ldr	r3, [r0, #8]
-	cmp	r3, #1
-	bne	nextPower
-
-	ldr	r1, [r0, #4]
-	add	r1, #2
-	mov	r2, #802
-	cmp	r1, r2			@ If at the bottom of the game powerup
-	movge	r1, #2			@ will die
-	strge	r1, [r0, #8]
-	strlt	r1, [r0, #4]		@ Else increment y offset by 2
-	
-nextPower:
-	ldr	r0, =powerUp2
-	ldr	r3, [r0, #8]
-	cmp	r3, #1
-	bne	powerDone
-	ldr	r1, [r0, #4]
-	add	r1, #2
-	cmp	r1, r2
-	movge	r1, #2
-	strge	r1, [r0, #8]
-	strlt	r1, [r0, #4]
-
-powerDone:
-	pop	{r4, lr}
-	bx	lr
-
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-.global setPowerUp
-setPowerUp:				@ Pick random numbers between x (160 - 640)
-	@ r0 = powerUp coord location	@ and y (225 - 375)
-	push	{r4-r6, lr}
-	mov	r7, r0			@ save memory location
-
-	mov	r1, #160
-	mov	r2, #640
-	mov	r3, #225
-	mov	r4, #375
-
-	bl	rand			@ rand() % (max + 1 - Min) + min
-	add	r5, r2, #1		@ to get a # from a range
-	sub	r5, r1			@@@@ Might not work @@@@
-	sdiv	r6, r0, r5		
-	mul	r6, r5
-	sub	r0, r6	
-	add	r0, r1			@ r0 = the random number
-	str	r0, [r7], #4
-
-	bl	rand			@ rand() % (max + 1 - Min) + min
-	add	r5, r2, #1		@ to get a # from a range
-	sub	r5, r1			@@@@ Might not work @@@@
-	sdiv	r6, r0, r5		
-	mul	r6, r5
-	sub	r0, r6			@ r0 = the random number
-	add	r0, r1
-	str	r0, [r7]
-
-	pop	{r4-r6, lr}
-	bx	lr
-
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 .global drawScore
@@ -621,20 +474,11 @@ paddle:
 	.int	360
 	.int	785
 
-.global	paddleDimen		@ Dimensions of the ball
+.global	paddleDimen		@ Dimensions of the paddle
 paddleDimen:
 	.int	80
 	.int	15
 
-.global	ballCoord
-ballCoord:
-	.int	396		@ Coordinates of ball
-	.int	777
-
-.global	ballDimen
-ballDimen:
-	.int	8		@ Dimensions on the ball
-	.int	8
 
 .global	powerUp1
 powerUp1:
@@ -655,47 +499,47 @@ powerUp2:
 
 .global	digitOne		@ Position of first digit
 digitOne:
-	.int	350
-	.int	82
+	.int	330
+	.int	85
 
 .global	digitTwo		@ Position of second digit
 digitTwo:
-	.int	388
-	.int	82
+	.int	305
+	.int	85
 
 .global	digitThree		@ Position third digit
 digitThree:
-	.int	426
-	.int	82
+	.int	280
+	.int	85
 
 .global livesPos		@ Position of lives
 livesPos:
-	.int	640
-	.int	82
+	.int	610
+	.int	85
 	
 .global	numberSize		@ Size of all number pictures
 numberSize:
-	.int	39
-	.int	50
-
+	.int	25
+	.int	25
+.global magenta
 magenta:			@ Transparent color
 	.int	0xFFF05EF0
-
+.global red
 red:
 	.int	0xFFFF0000
-
+.global orange
 orange:
 	.int	0xFFFF8B00
-
+.global yellow
 yellow:
 	.int	0xFFFFEE00
-
+.global powerUp1Color
 powerUp1Color:
 	.int	0xFF15E620
-
+.global powerUp2Color
 powerUp2Color:
 	.int	0xFFa910eb
-
+.global ballColor
 ballColor:
 	.int	0xFF99D9Ea
 
@@ -730,5 +574,4 @@ map:
 	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
 	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
 	.int	5, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9
-
 
