@@ -197,8 +197,15 @@ wallTest:
 	bl	wallTestSub
 	mov	r6, r0
 	mov	r7, r1
+	mov	r11, r2
+	mov	r12, r3
 	
 ceilingTest:
+	ldr	r3, =vertDirection
+	ldr	r9, [r3]
+	cmp	r9, #1	
+	bne	floorTest
+
 	mov	r0, r11
 	mov	r1, r12
 	mov	r2, r10
@@ -209,12 +216,11 @@ ceilingTest:
 	str	r6, [r3]
 	str	r7, [r3, #4]
 
-	ldr	r3, =vertDirection
-	ldr	r9, [r3]
-	cmp	r9, #1
-	bleq	ceilingTestSub
-	moveq	r6, r0
-	moveq	r7, r1
+	bl	ceilingTestSub
+	mov	r6, r0
+	mov	r7, r1
+	mov	r11, r2
+	mov	r12, r3
 	
 floorTest:
 
@@ -372,6 +378,8 @@ endWallSub:
 
 	mov	r0, r6
 	mov	r1, r7
+	mov	r2, r11
+	mov	r3, r12
 	pop	{r4-r12, pc}
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -395,8 +403,8 @@ ceilingTestSub:
 	ble	ceilingBody		@if yes, jump to the ceilingBody to perform reflection, otherwise, check for a brick collision
 
 checkBrick:
-	@mov 	r0, r11			@
-	@mov 	r1, r12			@
+	mov 	r0, r11			@
+	mov 	r1, r12			@
 	bl  	getPixelColour		@
 
 	ldr 	r2, =yellow		@
