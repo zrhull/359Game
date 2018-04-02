@@ -47,9 +47,66 @@ updateMenu:
 	mov	r7, #A
 	ldreq	r0, [r4, #CURSORLOC]	@ load cursor location
 					@ and pass as new state
-	beq	changeState
+	bleq	changeState
 	b	updateReturn	
 
+updatePause:
+
+	cmp	r10, #UP		@ UP button pressed
+	moveq	r9, #PLAY		@ change cursor to play
+	streq	r9, [r4, #CURSORLOC]
+	bleq	updateCursor		@ draw new cursor
+	beq	updateReturn
+	
+	cmp	r10, #DOWN		@ down button pressed
+	moveq	r9, #QUIT		@ change cursor to quit
+	streq	r9, [r4, #CURSORLOC]	
+	bleq	updateCursor		@ draw new cursor
+	beq	updateReturn
+	cmp	r10, #A			@ A button pressed
+
+	ldreq	r0, [r4, #CURSORLOC]	@ load cursor location
+	bne	resume			@ and pass as new state
+	bleq	changeState
+	beq	updateReturn
+	@@@@@@@@@@@@@@@
+	@@@@@@ TEST for unpause
+	@@@@@@@@@@@@@
+
+resume:
+	cmp	r10, #START
+	bne	updateReturn
+
+
+	ldr	r0, =gameState
+	mov	r1, #PLAY
+	str	r1, [r0, #STATE]	@@ change state to play
+buttonReleasedResume:
+	bl	newButton
+	cmp	r0, #NOBUTTON
+	bne	buttonReleasedResume
+	
+	bl	setup
+	ldr	r4, =gameState
+	mov	r1, #1			@@ save #1 into PLAYING
+	str	r1, [r4, #PLAYING]	@@ activates playing	
+	
+	b	updateReturn
+
+	@@@ IF START IS PRESSED AGAIN, RESUME PLAY @@
+	@@ CALLING SETUP SHOULD WORK??@@@
+	@cmp	r10, #START
+	@bleq	setup
+	@ldr	r4, =gameState
+	@mov	r1, #1			@@ save #1 into PLAYING
+	@str	r1, [r4, #PLAYING]	@@ activates playing
+
+
+	@ldr	r0, =gameState
+	@mov	r1, #PLAY
+	@str	r1, [r0, #STATE]	@@ change state to play
+	
+	b	updateReturn	
 
 
 
@@ -74,6 +131,10 @@ updateMenu:
 
  
 updateGame:
+	cmp	r10, #START
+	moveq	r0, #PAUSE
+	bleq	changeState
+
 	@@ Start with checking if actively playing or not@@
 	@@ if not playing and then B pressed, change to ACTIVE (1)
 	ldr	r5, [r4, #PLAYING]
@@ -83,13 +144,10 @@ updateGame:
 	bne	updateReturn		@ waiting to start game
 	mov	r1, #1			@ save #1 into PLAYING
 	str	r1, [r4, #PLAYING]
+	
 		
 
 playing:
-	
-	@@cmp	r10, #START
-	@@moveq	r0, #PAUSE
-	@@bleq	changeState
 
 @@ ONCE WORKING, TEST IF YOU CAN JUST ERASE, UPDATE, DRAW for
 @@ powerup then paddle then ball. Might be easier to skip over
@@ -144,7 +202,7 @@ coordUpdate:
 	bl	ballPositionUpdate
 	bl	powerUpdate		@ Update PowerUp locations
 
-test:	mov	r0, r10			@ Update Paddle location
+	mov	r0, r10			@ Update Paddle location
 	bl	PaddleUpdate
 
 @@@@@@@@@@@ Draw paddle, ball, and powerUps @@@@@@@@@@@@@@@@
@@ -174,12 +232,6 @@ test:	mov	r0, r10			@ Update Paddle location
 	
 
 
-@@ CURSOR
-@@
-@@
-@@
-updatePause:
-
 
 
 @@ Set ACTIVE to 0,
@@ -208,8 +260,11 @@ changeState:
 	beq	stateDone
 	cmp	r4, #PLAY
 	beq	changePlay
-	@cmp	r4, #PAUSE
-	@beq	pause
+	cmp	r4, #PAUSE
+	beq	pause
+	cmp	r4, #QUIT
+	beq	quitting
+	b	stateDone
 
 
 changePlay:
@@ -218,7 +273,8 @@ changePlay:
 	cmp	r1, #MENU		@ If current state was menu, then initialize board
 	beq	playINIT
 	cmp	r1, #PAUSE
-	beq	stateDone		@JUST FOR NOW FIX LATER!!!!!!!
+	bleq	restartGame		@ If current state is pause, then redraw whole board with current values
+	beq	playINIT		@ and set playing to active
 	b	stateDone
 playINIT:
 	ldr	r0, =ScoreBoard		@Draw scoreboard
@@ -242,27 +298,137 @@ pause:
 	ldr	r0, =gameState
 	mov	r1, #0			@ Sets active playing to false
 	str	r1, [r0, #PLAYING]
+	bl	drawPause
+buttonReleased:
+	bl	newButton
+	cmp	r0, #NOBUTTON
+	bne	buttonReleased	
+	b	stateDone
+
+quitting:
+	ldr	r0, =gameState
+	ldr	r1, [r0, #STATE]
+	cmp	r1, #MENU
+	bleq	drawQuit
 	
+	cmp	r1, #PAUSE
 	
+	moveq	r4, #MENU		@@ DO THIS SINCE QUITTING FROM PAUSE
+	bleq	initMenuScreen			@@ RETURNS TO MENU AND DOES NOT QUIT
+
+buttonReleased2:
+	bl	newButton
+	cmp	r0, #NOBUTTON
+	bne	buttonReleased	
+	@b	stateDone
 
 
-
-unpause:
-
-
+	
 
 stateDone:
 	ldr	r0, =gameState
 	str	r4, [r0, #STATE]
 	pop	{r4, lr}
 	bx	lr
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+.global restart
+reset:
+	push	{r4,r5,lr}
+	@@ draw new board with paddle @@
+	ldr	r4, =paddle
+	mov	r5, #STARTPADX
+	str	r5, [r4]
+	mov	r5, #STARTPADY
+	str	r5, [r4, #4]
+
+	@@ ball init	
+	ldr	r4, =ballCoord
+	mov	r5, #STARTBALLX
+	str	r5, [r4]
+	mov	r5, #STARTBALLY
+	str	r5, [r4, #4]
 	
+	@@TL of ball
+	ldr	r4, =TL
+	mov	r5, #STARTBALLX
+	str	r5, [r4]
+	mov	r5, #STARTBALLY
+	str	r5, [r4, #4]
+	@@TR of ball
+	ldr	r4, =TR
+	mov	r5, #STARTBALLX
+	add	r5, #7
+	str	r5, [r4]
+	mov	r5, #STARTBALLY
+	str	r5, [r4, #4]
+	@@BL of ball
+	ldr	r4, =BL
+	mov	r5, #STARTBALLX
+	str	r5, [r4]
+	mov	r5, #STARTBALLY
+	add	r5, #7
+	str	r5, [r4, #4]
+	@@BR of ball
+	ldr	r4, =BR
+	mov	r5, #STARTBALLX
+	add	r5, #7
+	str	r5, [r4]
+	mov	r5, #STARTBALLY
+	add	r5, #7
+	str	r5, [r4, #4]
+	@@ RESTART ANGLE OF BALL and VALUES
+	@ldr	r4, =angle
+	@mov	r5, #45
+	@str	r5, [r4]
+
+	@ldr	r4, =horizDirection
+	@mov	r5, #1
+	@str	r5, [r4]
+	@ldr	r4, =vertDirections
+	@str	r5, [r4]
+
+
+	pop	{r4,r5,lr}
+	bx	lr
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@ restartGame, will use the mapINIT to copy its values
+@@@@ over to the current map
+@@@@ Change ball/paddle/score/lives to initial value
+@@@@ ball TR TL BR BL stuff?
+restartGame:
+
+
+@@@ ADJUST SO RESTART GAME CALLS RESET, WHICH ONLY DOES PADDLE/BALL@@	
+	push	{r4-r10, lr}
+	ldr	r4, =mapINIT
 	
+	ldr	r6, =map
+
+	.rept	392
+
+	ldr	r5, [r4], #4
+	str	r5, [r6], #4
+	
+	.endr
+
+	bl	reset
+	@@@ Set lives/score to init
+	ldr	r4, =gameState
+	mov	r5, #PLAY		@@ chage state to play
+	str	r5, [r4]
+	mov	r5, #STARTSCORE		@@ change score to 0
+	str	r5, [r4, #8]
+	mov	r5, #STARTLIVES
+	str	r5, [r4, #12]
+
+	pop	{r4-r10, lr}
+	bx	lr
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	
 	
 .section .data
 
 dim: .int 0,0
-
+xy: .int 0,0
 
 
 
