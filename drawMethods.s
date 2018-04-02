@@ -637,6 +637,13 @@ powerUp2Color:
 .global ballColor
 ballColor:
 	.int	0xFF99D9Ea
+	.global innerBlue
+innerBlue:
+	.int	0xFF313CB9
+
+.global outerBlue
+outerBlue:
+	.int	0xFF272F8F
 
 
 .global	map
