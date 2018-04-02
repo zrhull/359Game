@@ -39,21 +39,21 @@ ballPositionUpdate:
 	mov	r1, r8
 	mov	r2, r9
 	bl	testResult
-	cmp	r0, #1
+	cmp	r2, #1
 	bne	finish
 
 	ldr	r0, =TL			@run checkCollisions of the top left pixel of ball's hitbox
 	mov	r1, r8
 	mov	r2, r9
 	bl	testResult
-	cmp	r0, #1
+	cmp	r2, #1
 	bne	finish
 
 	ldr	r0, =BR			@run checkCollisions of the bottom right pixel of ball's hitbox
 	mov	r1, r8
 	mov	r2, r9
 	bl	testResult
-	cmp	r0, #1
+	cmp	r2, #1
 	bne	finish
 
 	ldr	r0, =BL			@run checkCollisions of the bottom left pixel of ball's hitbox
@@ -97,12 +97,12 @@ testResult:
 	ldr	r5, =horizDirection	@load horizontal direction address into r5
 	ldr	r4, [r5]		@load value of horizontal direction into r4
 	cmp	r4, r7			@if the horizontal direction (r4) has changed, branch to the end
-	movne	r0, #1
+	movne	r2, #1
 
 	ldr	r5, =vertDirection	@load vertical direction address into r5
 	ldr	r4, [r5]		@load value of vertical direction into r4
 	cmp	r4, r8			@if the vertical direction (r4) has changed, branch to the end
-	movne	r0, #1
+	movne	r2, #1
 	
 	pop	{r4, r5, r6, r7, r8, pc}
 
@@ -189,6 +189,10 @@ wallTest:
 	ldr	r3, =tempCurrentPos
 	str	r4, [r3]
 	str	r5, [r3, #4]
+	ldr	r3, =tempBallCoord
+	str	r6, [r3]
+	str	r7, [r3, #4]
+
 
 	bl	wallTestSub
 	mov	r6, r0
@@ -201,6 +205,10 @@ ceilingTest:
 	ldr	r3, =tempCurrentPos
 	str	r4, [r3]
 	str	r5, [r3, #4]
+	ldr	r3, =tempBallCoord
+	str	r6, [r3]
+	str	r7, [r3, #4]
+
 	ldr	r3, =vertDirection
 	ldr	r9, [r3]
 	cmp	r9, #1
@@ -219,6 +227,9 @@ floorTest:
 	ldr	r2, =tempCurrentPos
 	str	r4, [r2]
 	str	r5, [r2, #4]
+	ldr	r3, =tempBallCoord
+	str	r6, [r3]
+	str	r7, [r3, #4]
 
 	bl	floorCollision
 
