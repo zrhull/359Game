@@ -169,6 +169,9 @@ downLeft:
 	b	finish
 
 finish:
+	cmp	r2, #1
+	beq	done
+
 	ldr	r2, =ballCoord		@load the ballCoord address into r2
 	str	r0, [r2]		@take the result from checkCollisions and store it into the memory location of the ball's x-coordinate
 	str	r1, [r2, #4]		@take the result from checkCollisions and store it into the memory location of the ball's y-coordinate
@@ -191,7 +194,7 @@ finish:
 	sub	r0, r0, #7		@take the result from checkCollisions and subtract 7 from the x-coordinate calculated above to get the position of the bottom left pixel
 	str	r0, [r3]		@take the result now in r0 and store it into the memory location of the ball's bottom left x-coordinate
 	str 	r1, [r3, #4]		@take the result now in r1 and store it into the memory location of the ball's bottom left y-coordinate
-
+done:
 	pop	{r4-r11, lr}
 	bx	lr	
 
@@ -636,12 +639,14 @@ loseLife:
 	ldr	r3, [r2, #LIVESLEFT]
 	sub	r3, #1
 	str	r3, [r2, #LIVESLEFT]
-
+	
 	bl	reset
+	mov	r12, #1
 
 endFloor:
 	mov	r0, r7
 	mov	r1, r8
+	mov	r2, r12
 	pop	{r4-r12, pc}
 	
 	
