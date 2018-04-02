@@ -324,7 +324,7 @@ brickHitX:
 
 	cmp	r3, #2
 	movlt	r3, #10
-	subeq	r3, #1
+	subge	r3, #1
 	cmp	r3, #3
 	subeq	r3, #1
 
@@ -452,7 +452,7 @@ brickHitY:
 
 	cmp	r3, #2
 	movlt	r3, #10
-	subeq	r3, #1
+	subge	r3, #1
 	cmp	r3, #3
 	subeq	r3, #1
 
@@ -493,8 +493,7 @@ floorTest:
 
 	bl	floorCollision
 
-	mov	r6, r0
-	mov	r7, r1
+	
 
 endCheckCollisions:
 	@str 	r4, [r10, #8]		@
@@ -728,5 +727,4 @@ BR:
 		.int		784
 		.int		0
 		.int		0
-
 
