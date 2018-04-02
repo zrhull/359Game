@@ -281,6 +281,8 @@ checkBrickX:
 	ldr 	r2, =yellow		@load the address of the yellow hex value into r2
 	ldr 	r1, [r2]		@load the yellow hex value into r1
 	cmp	r0, r1			@compare the value returned by getpixelColour (r0) to the hex value of yellow (r1)
+	mov 	r0, r11			@
+	mov 	r1, r12			@
 	bleq	brickHit		@if the value is not equal, not colliding with yellow brick, move to ceiling collisions; otherwise, it will move into the wall body
 	mov	r11, r0
 	mov	r12, r1
@@ -289,6 +291,8 @@ checkBrickX:
 	ldr 	r2, =orange		@load the address of the yellow hex value into r2
 	ldr 	r1, [r2]		@load the orange hex value into r1
 	cmp	r0, r1			@compare the value returned by getpixelColour (r0) to the hex value of orange (r1)
+	mov 	r0, r11			@
+	mov 	r1, r12			@
 	bleq	brickHit		@if they equal, collision with orange brick on top of the ball is detected, move to inner body
 	mov	r11, r0
 	mov	r12, r1
@@ -298,6 +302,8 @@ checkBrickX:
 	ldr 	r1, [r2]		@load the red hex value into r1
 	cmp	r0, r1			@compare the value returned by getpixelColour (r0) to the hex value of red (r1)
 	bne	endWallSub		@if they equal, collision with red brick on top of the ball is detected, move to inner body
+	mov 	r0, r11			@
+	mov 	r1, r12			@
 	bl	brickHit
 	mov	r11, r0
 	mov	r12, r1
@@ -339,6 +345,8 @@ checkBrickY:
 	ldr 	r2, =yellow		@load the address of the yellow hex value into r2
 	ldr 	r1, [r2]		@load the yellow hex value into r1
 	cmp	r0, r1			@compare the value returned by getpixelColour (r0) to the hex value of yellow (r1)
+	mov 	r0, r11			@
+	mov 	r1, r12			@
 	bleq	brickHit
 	beq	innerBody		@if they equal, collision with yellow brick on top of the ball is detected, move to inner body
 					@otherwise, check orange brick
@@ -346,6 +354,8 @@ checkBrickY:
 	ldr 	r2, =orange		@load the address of the yellow hex value into r2
 	ldr 	r1, [r2]		@load the orange hex value into r1
 	cmp	r0, r1			@compare the value returned by getpixelColour (r0) to the hex value of orange (r1)
+	mov 	r0, r11			@
+	mov 	r1, r12			@
 	bleq	brickHit
 	beq	innerBody		@if they equal, collision with orange brick on top of the ball is detected, move to inner body
 					@otherwise, check red brick
@@ -353,6 +363,8 @@ checkBrickY:
 	ldr 	r2, =red		@load the address of the red hex value into r2
 	ldr 	r1, [r2]		@load the red hex value into r1
 	cmp	r0, r1			@compare the value returned by getpixelColour (r0) to the hex value of red (r1)
+	mov 	r0, r11			@
+	mov 	r1, r12			@
 	bleq	brickHit
 	beq	innerBody		@if they equal, collision with red brick on top of the ball is detected, move to inner body
 
@@ -390,17 +402,23 @@ checkBrick:
 	ldr 	r2, =yellow		@
 	ldr 	r1, [r2]		@
 	cmp	r0, r1			@
+	mov 	r0, r11			@
+	mov 	r1, r12			@
 	bleq	brickHit		@
 
 	ldr 	r2, =orange		@
 	ldr 	r1, [r2]		@
 	cmp	r0, r1			@
+	mov 	r0, r11			@
+	mov 	r1, r12			@
 	bleq	brickHit		@
 
 	ldr 	r2, =red		@
 	ldr 	r1, [r2]		@
 	cmp	r0, r1			@
 	bne	endCeilingSub		@
+	mov 	r0, r11			@
+	mov 	r1, r12			@
 	bl	brickHit	
 
 ceilingBody:
@@ -463,18 +481,24 @@ checkBrickFloor:
 	ldr 	r2, =yellow		@
 	ldr 	r1, [r2]		@
 	cmp	r0, r1			@
+	mov 	r0, r11			@
+	mov 	r1, r12			@
 	bleq	brickHit
 	beq	floorBody		@
 
 	ldr 	r2, =orange		@
 	ldr 	r1, [r2]		@
 	cmp	r0, r1			@
+	mov 	r0, r11			@
+	mov 	r1, r12			@
 	bleq	brickHit		@
 	beq	floorBody
 
 	ldr 	r2, =red		@
 	ldr 	r1, [r2]		@
 	cmp	r0, r1			@
+	mov 	r0, r11			@
+	mov 	r1, r12			@
 	bleq	brickHit		@
 	beq	floorBody
 
@@ -578,7 +602,10 @@ getPixelColour:
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @ new sub
 brickHit:
-	push	{r4-r7, lr}
+	push	{r4-r12, lr}
+
+	mov	r11, r0
+	mov	r12, r1
 
 	mov	r3, #40
 	sdiv	r6, r11, r3
@@ -630,7 +657,7 @@ brickHit:
 	addeq	r2, #1
 	streq	r2, [r3, #8]
 
-	pop	{r4-r7, pc}
+	pop	{r4-r12, pc}
 	
 
 .section	.data
