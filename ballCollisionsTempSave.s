@@ -517,6 +517,7 @@ floorCollision:
 
 	mov	r11, r0
 	mov	r12, r1
+	mov	r6, r2
 
 bottomTest:
 	cmp	r12, #823		@check is the next value of the y-coordinate for testing pixel is less than the floor (824)
@@ -590,8 +591,6 @@ paddle45:
 	mov	r3, #45
 	str	r3, [r2]
 	
-	cmp	longPaddle, #1
-	
 
 	ldr	r2, =paddle
 	ldr	r3, [r2]
@@ -615,13 +614,13 @@ floorBody:
 	add	r7, r7, r1		@
 	ldr	r8, [r2, #12]		@
 		
-	ldr	r12, [r2, #12]		@load the testing pixel previous y coordinate
+	ldr	r12, [r6, #12]		@load the testing pixel previous y coordinate
 					@next x coordinate of testing pixel is set to its previous coordinate
 
-	ldr	r1, =tempCurrentPos
-	ldr	r10, [r1]
+	@ldr	r1, =tempCurrentPos
+	@ldr	r10, [r1]
 
-	ldr	r2, [r2, #8]		@load the testing pixel previous x coordinate
+	ldr	r2, [r6, #8]		@load the testing pixel previous x coordinate
 	sub	r2, r10, r2		@current testing pixel x - previous x
 	add	r11, r4, r2		@testing pixel next x = current x + (current x - prev x) (flipped over the y-axis)
 
@@ -640,8 +639,8 @@ loseLife:
 	bl	reset
 
 endFloor:
-	mov	r0, r6
-	mov	r1, r7
+	mov	r0, r7
+	mov	r1, r8
 	pop	{r4-r12, pc}
 	
 	
