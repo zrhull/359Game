@@ -484,6 +484,32 @@ loopCount:
 	bx	lr
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+.global drawPause
+drawPause:
+	push	{lr}
+	ldr	r0, =pause
+	ldr	r1, =pauseWH
+	ldr	r2, =pauseXY
+	bl	drawImage
+	
+	ldr	r0, =gameState
+	mov	r1, #PLAY
+	str	r1, [r0, #CURSORLOC]
+	bl	updateCursor
+	pop	{lr}
+	bx	lr
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+.global drawQuit
+drawQuit:
+	push	{lr}
+	@ldr	r0, =quit
+	@ldr	r1, =quitWH
+	@ldr	r2, =quitXY
+	@bl	drawImage
+	pop	{lr}
+	bx	lr
 
 @ Data section
 .section .data
