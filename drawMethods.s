@@ -362,28 +362,36 @@ DrawBackground:				@ given object
 	
 	ldr	r3, [r1, #4]			@ Height of object
 	ldr	r2, [r1]			@ Width of object
+	add	r3, #10
+	add	r2, #10
 	ldr	r1, [r0, #4]			@ Y coord of object
 	ldr	r0, [r0]			@ X coord of object
+	sub	r1, #5
+	sub	r0, #5
 	mov	r4, #40
 	mov	r11, #25
-	sdiv	r5, r0, r4		
-	mul	r5, r4				@ X offset of background
-	sdiv	r6, r1, r11
-	mul	r6, r11				@ Y offset of background
+	sdiv	r5, r0, r4
 
-	sdiv	r8, r2, r4
-	add	r8, #2				@ Get number of background bricks in length
+	add	r8, r2, r0
+	sdiv	r8, r4
+	sub	r8, r5			@ Number of bricks to draw X
+	add	r8, #1
+		
+	mul	r5, r4				@ X offset of background
+
+	add	r3, r1
 	sdiv	r3, r11
-	add	r3, #1				@ Get # of background bricks in height
 	mul	r3, r11
-	add	r3, r6				@ Max Y pixel value (For loop counter)
+	
+	sdiv	r6, r1, r11
+	mul	r6, r11				@ Y offset of background	
 
 	ldr	r9, =map
 YLoopReDrawBack:
 	mov	r7, #0				@ x loop counter
 	mov	r12, r5 
 XLoopReDrawBack:
-	sdiv	r10, r5, r4			@ # of bricks from the screen wall
+	sdiv	r10, r12, r4			@ # of bricks from the screen wall
 	sub	r10, #3				@ Element # in the row of the map
 	sdiv	r2, r6, r11			@ # of bricks from the screen ceiling
 	sub	r2, #5				@ Row #
@@ -394,18 +402,27 @@ XLoopReDrawBack:
 	mul	r10, r1				@ The offset of the element in the map
 	ldr	r10, [r9, r10]			@ Load value of map position
 	
-breakT:	cmp	r10, #10			@ Determin the tile to be drawn
+	cmp	r10, #10			@ Determin the tile to be drawn
 	ldreq	r2, =background
+	beq	colorFound
+
 	cmp	r10, #3
 	ldreq	r2, =red
 	ldreq	r2, [r2]
+	beq	colorFound
+
 	cmp	r10, #2
 	ldreq	r2, =orange
 	ldreq	r2, [r2]
+	beq	colorFound
+
 	cmp	r10, #1
 	ldreq	r2, =yellow
 	ldreq	r2, [r2]
+	
+	bne	noDraw	
 
+colorFound:
 	mov	r1, r6				@ Y offset for a parameter
 	mov	r0, r12
 	cmp	r7, r8				@ Compare X loop counter to # of bricks to draw
@@ -416,6 +433,9 @@ breakT:	cmp	r10, #10			@ Determin the tile to be drawn
 	cmp	r10, #4				@ Compare the value in the map
 	blgt	drawHardTile			@ Draw picture
 	bllt	drawTile			@ Draw color
+noDraw:
+	cmp	r12, #640			@ Dont Draw over the boarder
+	bge	doneXLoopBack
 	add	r7, #1				@ Increment X loop counter
 	add	r12, #40			@ Increment X offset
 	b	XLoopReDrawBack
