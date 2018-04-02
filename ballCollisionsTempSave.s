@@ -330,29 +330,27 @@ brickHitX:
 
 	str 	r3, [r2, r0]
 
-	ldr	r2, =powerUp1
-	ldr	r0, [r2]
-	ldr	r1, [r2, #4]
-	ldr	r2, [r2, #8]
+	ldr	r3, =powerUp1
+	ldr	r0, [r3]
+	ldr	r1, [r3, #4]
+	ldr	r2, [r3, #8]
 
 	cmp	r4, r0
-	bne	noPowerup
-	cmp	r5, r1
-	bne	noPowerup
-	cmp	r2, #0
+	cmpeq	r5, r1
+	cmpeq	r2, #0
 	addeq	r2, #1
+	streq 	r2, [r3, #8]
 
-	ldr	r2, =powerUp2
-	ldr	r0, [r2]
-	ldr	r1, [r2, #4]
-	ldr	r2, [r2, #8]
+	ldr	r3, =powerUp2
+	ldr	r0, [r3]
+	ldr	r1, [r3, #4]
+	ldr	r2, [r3, #8]
 
 	cmp	r4, r0
-	bne	noPowerup
-	cmp	r5, r1
-	bne	noPowerup
-	cmp	r2, #0
+	cmpeq	r5, r1
+	cmpeq	r2, #0
 	addeq	r2, #1
+	streq	r2, [r3, #8]
 		
 	
 wallBody:
