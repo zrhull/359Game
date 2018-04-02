@@ -452,17 +452,20 @@ checkBrickFloor:
 	ldr 	r2, =yellow		@
 	ldr 	r1, [r2]		@
 	cmp	r0, r1			@
-	beq	floorBrickHitY		@
+	bleq	brickHit
+	beq	floorBody		@
 
 	ldr 	r2, =orange		@
 	ldr 	r1, [r2]		@
 	cmp	r0, r1			@
-	beq	floorBrickHitY		@
+	bleq	brickHit		@
+	beq	floorBody
 
 	ldr 	r2, =red		@
 	ldr 	r1, [r2]		@
 	cmp	r0, r1			@
-	beq	floorBrickHitY		@
+	bleq	brickHit		@
+	beq	floorBody
 
 	ldr	r2, =innerBlue
 	ldr	r1, [r2]
@@ -474,9 +477,6 @@ checkBrickFloor:
 	cmp	r0, r1
 	bne	endFloor
 	b	paddle45	
-
-BrickHitShit
-	b	floorBody
 
 paddle60:
 	ldr	r2, =angle
