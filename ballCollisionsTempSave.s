@@ -1,5 +1,5 @@
 .section .text
-
+.include "constants.s"
 @new sub
 .global ballPositionUpdate
 ballPositionUpdate:
@@ -324,7 +324,7 @@ brickHitX:
 
 	cmp	r3, #2
 	movlt	r3, #10
-	subge	r3, #1
+	subeq	r3, #1
 	cmp	r3, #3
 	subeq	r3, #1
 
@@ -452,7 +452,7 @@ brickHitY:
 
 	cmp	r3, #2
 	movlt	r3, #10
-	subge	r3, #1
+	subeq	r3, #1
 	cmp	r3, #3
 	subeq	r3, #1
 
@@ -493,7 +493,8 @@ floorTest:
 
 	bl	floorCollision
 
-	
+	mov	r6, r0
+	mov	r7, r1
 
 endCheckCollisions:
 	@str 	r4, [r10, #8]		@
@@ -520,7 +521,8 @@ floorCollision:
 	mov	r6, r2
 
 bottomTest:
-	cmp	r12, #823		@check is the next value of the y-coordinate for testing pixel is less than the floor (824)
+	mov	r0, #823
+	cmp	r12, r0			@check is the next value of the y-coordinate for testing pixel is less than the floor (824)
 	bge	loseLife		@if yes, fall through to ceilingAngleTest, otherwise, check for a brick collision
 
 checkBrickFloor:
@@ -600,7 +602,7 @@ paddle45:
 	ldr	r5, [r2]
 	add	r5, #7
 
-	ldr	r2, =horizonDirection
+	ldr	r2, =horizDirection
 	mov	r4, #0
 	cmp	r5, r3
 	strle	r4, [r2]
