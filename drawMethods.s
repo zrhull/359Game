@@ -537,18 +537,22 @@ updateLives:
 
 	ldr	r0, =gameState
 	ldr	r1, [r0, #LIVESLEFT]
+	ldr	r0, =blackTile
+	ldr	r1, =blackTileWH
+	ldr	r2, =livesPos
+
 	cmp	r1, #0
-	ldreq	r0, zero
-	ldreq	r1, =blackTileWH
+	ldreq	r0, =zero
+	ldreq	r1, =numberSize
 	ldreq	r2, =livesPos
 	bleq	drawImage
 	cmp	r1, #1
 	ldreq	r0, one
-	ldreq	r1, =blackTileWH
+	ldreq	r1, =numberSize
 	ldreq	r2, =livesPos
 	bleq	drawImage
 	ldrne	r0, =two
-	ldrne	r1, =blackTileWH
+	ldrne	r1, =numberSize
 	ldrne	r2, =livesPos
 	blne	drawImage
 
