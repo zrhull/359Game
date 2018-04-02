@@ -104,7 +104,7 @@ testResult:
 	cmp	r4, r8			@if the vertical direction (r4) has changed, branch to the end
 	movne	r0, #1
 	
-	pop	{r4, r5, r7, r8, pc}
+	pop	{r4, r5, r6, r7, r8, pc}
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
@@ -562,7 +562,7 @@ getPixelColour:
 	ldr		r6, [r5]
 	ldr		r0, [r6, r4]
 
-	pop		{r4, r5, r6, pc}
+	pop		{r4-r6, pc}
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @ new sub
