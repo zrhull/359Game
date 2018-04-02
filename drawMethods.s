@@ -499,17 +499,37 @@ drawPause:
 	bl	updateCursor
 	pop	{lr}
 	bx	lr
+	
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 .global drawQuit
 drawQuit:
-	push	{lr}
-	@ldr	r0, =quit
-	@ldr	r1, =quitWH
-	@ldr	r2, =quitXY
-	@bl	drawImage
-	pop	{lr}
-	bx	lr
+	push	{r4-r10, lr}
+	
+	mov	r5, #125		@ Start of game boarder for Y
+	mov	r7, #0			@ Y loop counter
+endY:
+	mov	r3, #0			@ Reset X counter
+	mov	r4, #120		@ Reset X offset
+endX:
+	ldr	r2, =0xffffff
+	mov	r0, r4			@ Give picture location X and Y coords as parameters
+	mov	r1, r5
+	cmp	r3, #14			@ Max X
+	bge	endBot
+	bl	drawTile
+	add	r4, #40			@ Add 40 to X offset
+	add	r3, #1			@ Increment X loop counter
+	b	endX
+endBot:
+	add	r5, #25			@ Increment Y offset
+	add	r7, #1			@ increment Y loop counter and loop again if needed
+	cmp	r7, #28
+	blt	endY
+
+	pop	{r4-r10, pc}
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 @ Data section
 .section .data
